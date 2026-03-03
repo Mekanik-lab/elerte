@@ -1,0 +1,38 @@
+CREATE DATABASE magazyn CHARACTER SET utf8mb4 COLLATE utf8mb4_polish_ci;
+USE magazyn;
+
+CREATE TABLE magazyn (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nazwa VARCHAR(500) NOT NULL,
+    kategoria VARCHAR(500),
+    ilosc INT NOT NULL DEFAULT 0 CHECK (ilosc >= 0),
+    lokalizacja TEXT,
+    uwagi VARCHAR(500)
+);
+
+CREATE TABLE wydania (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    data_i_godzina TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    pracownik VARCHAR(250) NOT NULL,
+    id_pozycji INT UNSIGNED NOT NULL,
+    ilosc INT NOT NULL CHECK (ilosc > 0),
+    powod VARCHAR(500),
+    FOREIGN KEY (id_pozycji) REFERENCES magazyn(id)
+);
+
+CREATE TABLE inwentaryzacja_sesja (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    data_sesji DATETIME NOT NULL,
+    stworzone_przez VARCHAR(500),
+    zatwierdzona BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE inwentaryzacja (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id_sesji INT UNSIGNED NOT NULL,
+    id_rzeczy INT UNSIGNED NOT NULL,
+    ilosc_policzona INT NOT NULL,
+    roznica INT,
+    FOREIGN KEY (id_sesji) REFERENCES inwentaryzacja_sesja(id),
+    FOREIGN KEY (id_rzeczy) REFERENCES magazyn(id)
+);
