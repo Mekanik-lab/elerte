@@ -48,12 +48,12 @@
                         echo "
                         <tbody>
                             <tr>
-                                <th>" . $row["id"] ."</th>
-                                <th>" . $row["nazwa"] ."</th>
-                                <th>" . $row["kategoria"] ."</th>
-                                <th>" . $row["ilosc"] ."</th>
-                                <th>" . $row["lokalizacja"] ."</th>
-                                <th>" . $row['uwagi'] . "</th>
+                                <td>" . $row["id"] ."</td>
+                                <td>" . $row["nazwa"] ."</td>
+                                <td>" . $row["kategoria"] ."</td>
+                                <td>" . $row["ilosc"] ."</td>
+                                <td>" . $row["lokalizacja"] ."</td>
+                                <td>" . $row['uwagi'] . "</td>
                             </tr>
                         </tbody>";
                     }
