@@ -31,7 +31,33 @@
     </aside>
     <section id="data">
     <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nazwa</th>
+                <th>Kategoria</th>
+                <th>Ilość</th>
+                <th>Lokalizacja</th>
+                <th>Uwagi</th>
+            </tr>
+        </thead>
         <?php
+            $sql = "SELECT * FROM magazyn";
+                    $query = mysqli_query($database, $sql);
+                    while($row = mysqli_fetch_assoc($query)) {
+                        echo "
+                        <tbody>
+                            <tr>
+                                <th>" . $row["id"] ."</th>
+                                <th>" . $row["nazwa"] ."</th>
+                                <th>" . $row["kategoria"] ."</th>
+                                <th>" . $row["ilosc"] ."</th>
+                                <th>" . $row["lokalizacja"] ."</th>
+                                <th>" . $row['uwagi'] . "</th>
+                            </tr>
+                        </tbody>";
+                    }
+
             if($_SERVER['REQUEST_METHOD'] === "POST") {
                 if ($_POST['addProduct'] == "addProduct") {
                     $stmt = mysqli_prepare($database, "INSERT INTO magazyn (nazwa, kategoria, ilosc, lokalizacja, uwagi) VALUES (?, ?, ?, ?, ?);");
