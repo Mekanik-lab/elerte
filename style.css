@@ -62,6 +62,7 @@ aside .tab button {
     justify-content: center;
     align-items: center;
     display: block;
+    overflow: auto;
 }
 
 .tab {
@@ -123,7 +124,7 @@ table {
     background-color: orange;
     border: none;
     border-radius: 2em;
-    width: 50%;
+    width: auto;
     height: auto;
     transition: 0.3s;
     padding: 0.5em;
@@ -138,7 +139,7 @@ table {
 }
 
 aside #closeFormButton {
-    width: auto;
+    width: 1em;
     height: 1em;
     color: white;
     cursor: pointer;

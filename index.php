@@ -1,3 +1,10 @@
+<?php
+    $database = mysqli_connect('localhost', 'root', '', 'magazyn');
+    if (!$database) {
+        die("Błąd połączenia. " . mysqli_connect_error());
+    }
+?>
+
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -24,108 +31,20 @@
     </aside>
     <section id="data">
     <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Nazwa produktu</th>
-                <th>Kategoria</th>
-                <th>Ilość</th>
-                <th>Lokalizacja</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>001</td>
-                <td>Klawiatura Logitech K120</td>
-                <td>Peripherals</td>
-                <td>34</td>
-                <td>Regał A1</td>
-            </tr>
-            <tr>
-                <td>002</td>
-                <td>Myszka Razer DeathAdder</td>
-                <td>Peripherals</td>
-                <td>12</td>
-                <td>Regał A2</td>
-            </tr>
-            <tr>
-                <td>002</td>
-                <td>Myszka Razer DeathAdder</td>
-                <td>Peripherals</td>
-                <td>12</td>
-                <td>Regał A2</td>
-            </tr>
-            <tr>
-                <td>002</td>
-                <td>Myszka Razer DeathAdder</td>
-                <td>Peripherals</td>
-                <td>12</td>
-                <td>Regał A2</td>
-            </tr>
-            <tr>
-                <td>002</td>
-                <td>Myszka Razer DeathAdder</td>
-                <td>Peripherals</td>
-                <td>12</td>
-                <td>Regał A2</td>
-            </tr>
-            <tr>
-                <td>002</td>
-                <td>Myszka Razer DeathAdder</td>
-                <td>Peripherals</td>
-                <td>12</td>
-                <td>Regał A2</td>
-            </tr>
-             <tr>
-                <td>002</td>
-                <td>Myszka Razer DeathAdder</td>
-                <td>Peripherals</td>
-                <td>12</td>
-                <td>Regał A2</td>
-            </tr>
-             <tr>
-                <td>002</td>
-                <td>Myszka Razer DeathAdder</td>
-                <td>Peripherals</td>
-                <td>12</td>
-                <td>Regał A2</td>
-            </tr>
-             <tr>
-                <td>002</td>
-                <td>Myszka Razer DeathAdder</td>
-                <td>Peripherals</td>
-                <td>12</td>
-                <td>Regał A2</td>
-            </tr>
-             <tr>
-                <td>002</td>
-                <td>Myszka Razer DeathAdder</td>
-                <td>Peripherals</td>
-                <td>12</td>
-                <td>Regał A2</td>
-            </tr>
-             <tr>
-                <td>002</td>
-                <td>Myszka Razer DeathAdder</td>
-                <td>Peripherals</td>
-                <td>12</td>
-                <td>Regał A2</td>
-            </tr>
-             <tr>
-                <td>002</td>
-                <td>Myszka Razer DeathAdder</td>
-                <td>Peripherals</td>
-                <td>12</td>
-                <td>Regał A2</td>
-            </tr>
-             <tr>
-                <td>002</td>
-                <td>Myszka Razer DeathAdder</td>
-                <td>Peripherals</td>
-                <td>12</td>
-                <td>Regał A2</td>
-            </tr>
-        </tbody>
+        <?php
+            if($_SERVER['REQUEST_METHOD'] === "POST") {
+                if ($_POST['addProduct'] == "addProduct") {
+                    $stmt = mysqli_prepare($database, "INSERT INTO magazyn (nazwa, kategoria, ilosc, lokalizacja, uwagi) VALUES (?, ?, ?, ?, ?);");
+                    $name = $_POST["productName"];
+                    $category = $_POST["productCategory"];
+                    $quantity = $_POST["productQuantity"];
+                    $adress = $_POST["productAdress"];
+                    $comments = $_POST["productComments"];
+                    mysqli_stmt_bind_param($stmt, "ssiss", $name, $category, $quantity, $adress, $comments);
+                    mysqli_stmt_execute($stmt);
+                }
+            }
+        ?>
     </table>
     </section>
     </main>

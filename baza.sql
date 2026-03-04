@@ -24,7 +24,7 @@ CREATE TABLE inwentaryzacja_sesja (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     data_sesji DATETIME NOT NULL,
     stworzone_przez VARCHAR(500),
-    zatwierdzone BOOLEAN DEFAULT FALSE
+    zatwierdzone BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE inwentaryzacja (
@@ -32,7 +32,7 @@ CREATE TABLE inwentaryzacja (
     id_sesji INT UNSIGNED NOT NULL,
     id_produktu INT UNSIGNED NOT NULL,
     stan INT NOT NULL CHECK (stan >= 0),
-    roznica INT ,
+    roznica INT,
     FOREIGN KEY (id_sesji) REFERENCES inwentaryzacja_sesja(id),
     FOREIGN KEY (id_produktu) REFERENCES magazyn(id)
 );
@@ -97,5 +97,3 @@ BEGIN
     END IF;
 END //
 DELIMITER ;
-
-

@@ -80,14 +80,14 @@ function renderMagazineAddProduct() {
             <label>Nazwa:</label>
             <input type="text" name="productName">
             <label>Kategoria:</label>
-            <input type="text" name="category">
+            <input type="text" name="productCategory">
             <label>Ilość:</label>
-            <input type="number" min="1" name="quantity">
+            <input type="number" min="1" name="productQuantity">
             <label>Lokalizacja:</label>  
-            <input type="text" name="adress">
+            <input type="text" name="productAdress">
             <label>Uwagi:</label>
             <input type="text" name="productComments">
-            <button onclick="hideForm()" id="submitButton">Zatwierdź</button>
+            <button type="submit" onclick="hideForm()" id="submitButton">Zatwierdź</button>
         </form>`;
 }
 
@@ -114,7 +114,7 @@ function renderForm(formName) {
                 <input type="text" name="adress">
                 <label>Uwagi:</label>
                 <input type="text" name="productComments">
-                <button onclick="hideForm()" id="submitButton">Zatwierdź</button>
+                <button type="submit" onclick="hideForm()" id="submitButton">Zatwierdź</button>
             </form>`;
             break;
         case "magazineDeleteProduct":
@@ -125,7 +125,7 @@ function renderForm(formName) {
                 <input type="hidden" name="searchProductUsingName" value="searchProductUsingName">
                 <label>Nazwa produktu:</label>
                 <input type="text" name="searchProductName">
-                <button onclick="hideForm()" id="submitButton">Zatwierdź</button>
+                <button type="submit" onclick="hideForm()" id="submitButton">Zatwierdź</button>
             </form>`;
             break;
         case "searchProductUsingName":
@@ -136,7 +136,7 @@ function renderForm(formName) {
                 <input type="hidden" name="searchProductUsingName" value="searchProductUsingName">
                 <label>Nazwa produktu:</label>
                 <input type="text" name="searchProductName">
-                <button onclick="hideForm()" id="submitButton">Zatwierdź</button>
+                <button type="submit" onclick="hideForm()" id="submitButton">Zatwierdź</button>
             </form>`;
             break;
         case "issue":
@@ -153,7 +153,7 @@ function renderForm(formName) {
                 <input type="number" min="1" name="issueQuantity">
                 <label>Powód:</label>
                 <input type="text" name="issueComment">
-                <button onclick="hideForm()" id="submitButton">Zatwierdź</button>
+                <button type="submit" onclick="hideForm()" id="submitButton">Zatwierdź</button>
             </form>`;
             break;
         case "inventory":
@@ -166,7 +166,7 @@ function renderForm(formName) {
                 <input type="text" name="inventoryEmployee">
                 <label>Stan:</label>
                 <input type="number" min="1" name="inventoryQuantity">
-                <button onclick="hideForm()" id="submitButton">Zatwierdź</button>
+                <button type="submit" onclick="hideForm()" id="submitButton">Zatwierdź</button>
             </form>`;
             break;
         default:
