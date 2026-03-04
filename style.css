@@ -1,0 +1,154 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    height: 100vh;
+    overflow-y: hidden;
+}
+
+header {
+    width: 100%;
+    padding: 1em;
+    background-color: orange;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+header button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.5em;
+    color: white;
+    width: 100%;
+}
+
+main {
+    width: 100%;
+    height: 100%;
+    background: #f2f2f2;
+    display: flex;
+}
+
+aside {
+    width: 20%;
+    height: 100%;
+    background-color: orange;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+}
+
+aside .tab button {
+    font-size: 1.6em;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: white;
+    padding: 0.5em;
+    width: 100%;
+    height: 100%;
+}
+
+#data {
+    width: 80%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: auto;
+}
+
+.tab {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+table, td, th {
+    border: 1px solid black;
+    border-collapse: collapse;
+    padding: 0.5em;
+}
+
+table {
+    font-size: 2em;
+}
+
+#formContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#formContainer form {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#formContainer label {
+    font-size: 1.6em;
+    margin: 0.5em;
+    color: white;
+}
+
+#formContainer input {
+   font-size: 1.4em;
+   border: 1px solid black;
+   border-radius: 2em;
+   padding: 0.5em;
+}
+
+#formContainer #submitButton {
+    margin-top: 0.8em;
+    background-color: orange;
+    border: none;
+    border-radius: 2em;
+    width: 50%;
+    height: auto;
+    transition: 0.3s;
+    padding: 0.5em;
+    font-size: 1.4em;
+    color: white;
+    cursor: pointer;
+}
+
+#formContainer #submitButton:hover {
+    background-color: rgb(197, 128, 0);
+    transform: scale(0.96);
+}
+
+aside #closeFormButton {
+    width: auto;
+    height: 1em;
+    color: white;
+    cursor: pointer;
+    font-size: 2em;
+    transform: scale(2);
+    position: fixed;
+    top: 0.2em;
+    right: 0.6em;
+    background: none;
+    border: none;
+}
+
+h1 {
+    font-size: 1.6em;
+}

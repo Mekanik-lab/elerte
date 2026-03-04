@@ -1,4 +1,0 @@
-index.php jako main page wszystkie zakładki i funkcje
-js do obsługi zmiany kartek i inne bajery 
-php do wykonywania działań na bazie. użyć pdo albo stmt, zabezpieczyć wszelkie znane problemy bazodanowe
-"komponenty w php za pomocą include"
