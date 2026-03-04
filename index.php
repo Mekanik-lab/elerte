@@ -76,7 +76,55 @@
                 <td>12</td>
                 <td>Regał A2</td>
             </tr>
-            
+             <tr>
+                <td>002</td>
+                <td>Myszka Razer DeathAdder</td>
+                <td>Peripherals</td>
+                <td>12</td>
+                <td>Regał A2</td>
+            </tr>
+             <tr>
+                <td>002</td>
+                <td>Myszka Razer DeathAdder</td>
+                <td>Peripherals</td>
+                <td>12</td>
+                <td>Regał A2</td>
+            </tr>
+             <tr>
+                <td>002</td>
+                <td>Myszka Razer DeathAdder</td>
+                <td>Peripherals</td>
+                <td>12</td>
+                <td>Regał A2</td>
+            </tr>
+             <tr>
+                <td>002</td>
+                <td>Myszka Razer DeathAdder</td>
+                <td>Peripherals</td>
+                <td>12</td>
+                <td>Regał A2</td>
+            </tr>
+             <tr>
+                <td>002</td>
+                <td>Myszka Razer DeathAdder</td>
+                <td>Peripherals</td>
+                <td>12</td>
+                <td>Regał A2</td>
+            </tr>
+             <tr>
+                <td>002</td>
+                <td>Myszka Razer DeathAdder</td>
+                <td>Peripherals</td>
+                <td>12</td>
+                <td>Regał A2</td>
+            </tr>
+             <tr>
+                <td>002</td>
+                <td>Myszka Razer DeathAdder</td>
+                <td>Peripherals</td>
+                <td>12</td>
+                <td>Regał A2</td>
+            </tr>
         </tbody>
     </table>
     </section>

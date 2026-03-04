@@ -61,7 +61,7 @@ aside .tab button {
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: auto;
+    display: block;
 }
 
 .tab {
@@ -77,10 +77,12 @@ table, td, th {
     border: 1px solid black;
     border-collapse: collapse;
     padding: 0.5em;
+    overflow: auto;
 }
 
 table {
     font-size: 2em;
+    width: 100%;
 }
 
 #formContainer {
