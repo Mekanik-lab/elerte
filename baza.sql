@@ -89,7 +89,7 @@ CREATE TRIGGER zatwierdz_inwentaryzacje
 AFTER UPDATE ON inwentaryzacja_sesja
 FOR EACH ROW
 BEGIN
-    IF NEW.zatwierdzone = TRUE AND OLD.zatwierdzone = FALSE THEN
+    IF NEW.zatwierdzone = 1 AND OLD.zatwierdzone = 0 THEN
         UPDATE magazyn 
         JOIN inwentaryzacja ON inwentaryzacja.id_produktu = magazyn.id
         SET magazyn.ilosc = inwentaryzacja.stan

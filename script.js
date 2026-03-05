@@ -2,8 +2,6 @@ const header = document.getElementsByTagName("header")[0];
 const closeFormButton = document.getElementById("closeFormButton");
 const formContainer = document.getElementById("formContainer");
 const magazineButton = document.getElementById("magazineButton");
-const issueButton = document.getElementById("issueButton");
-const inventoryButton = document.getElementById("inventoryButton");
 const data = document.getElementById('data');
 
 hideForm();
@@ -12,48 +10,55 @@ renderMagazineButtons("magazyn");
 function highlightMagazineTab() {
     document.getElementsByClassName("tab")[0].style.backgroundColor = "rgb(197, 128, 0)";
     document.getElementsByClassName("tab")[1].style.backgroundColor = "orange";
-    document.getElementsByClassName("tab")[2].style.backgroundColor = "orange";  
+    document.getElementsByClassName("tab")[2].style.backgroundColor = "orange";
+    document.getElementsByClassName("tab")[3].style.backgroundColor = "orange";
 }
 
 function highlightIssueTab() {
     document.getElementsByClassName("tab")[0].style.backgroundColor = "orange";
     document.getElementsByClassName("tab")[1].style.backgroundColor = "rgb(197, 128, 0)";
-    document.getElementsByClassName("tab")[2].style.backgroundColor = "orange";  
+    document.getElementsByClassName("tab")[2].style.backgroundColor = "orange";
+    document.getElementsByClassName("tab")[3].style.backgroundColor = "orange";
 }
 
 function highlightInventoryTab() {
     document.getElementsByClassName("tab")[0].style.backgroundColor = "orange";
     document.getElementsByClassName("tab")[1].style.backgroundColor = "orange";
-    document.getElementsByClassName("tab")[2].style.backgroundColor = "rgb(197, 128, 0)";  
+    document.getElementsByClassName("tab")[2].style.backgroundColor = "rgb(197, 128, 0)";
+    document.getElementsByClassName("tab")[3].style.backgroundColor = "orange";
+}
+
+function highlightInventorySessionTab() {
+    document.getElementsByClassName("tab")[0].style.backgroundColor = "orange";
+    document.getElementsByClassName("tab")[1].style.backgroundColor = "orange";
+    document.getElementsByClassName("tab")[2].style.backgroundColor = "orange";
+    document.getElementsByClassName("tab")[3].style.backgroundColor = "rgb(197, 128, 0)";
 }
 
 function renderMagazineButtons(sectionName) {
-    header.innerHTML = 
+    header.innerHTML =
     `<h1>Magazynek IT</h1>
     <button onclick="renderForm('magazineAddProduct')">Dodaj</button>
-        <button onclick="renderForm('magazineEditProduct')">Edytuj</button>
-        <button onclick="renderForm('magazineDeleteProduct')">Usuń</button>
-        <button onclick="renderForm('searchProductUsingName')">Filtruj po nazwie produktu</button>`;
+    <button onclick="renderForm('magazineEditProduct')">Edytuj</button>
+    <button onclick="renderForm('magazineDeleteProduct')">Usuń</button>
+    <button onclick="renderForm('searchProductByName')">Filtruj po nazwie produktu</button>`;
     highlightMagazineTab();
     loadTable(sectionName);
 }
 
 function loadTable(tableName) {
     fetch(`getTable.php?table=${tableName}`, {
-        headers: {
-            "X-Requested-With": "XMLHttpRequest"
-        }
+        headers: { "X-Requested-With": "XMLHttpRequest" }
     })
     .then(res => res.text())
     .then(html => {
-        console.log(html);
         data.innerHTML = html;
     });
 }
 
 function hideForm() {
-    formContainer.style.display="none";
-    formContainer.innerHTML=``;
+    formContainer.style.display = "none";
+    formContainer.innerHTML = ``;
 }
 
 function loadSection(sectionName) {
@@ -64,48 +69,63 @@ function loadSection(sectionName) {
             loadTable(sectionName);
             break;
         case "wydania":
-            header.innerHTML = 
-            `
-                <h1>Magazynek IT</h1>
-                <button onclick="renderForm('issue')">Wydanie</button>
-            `;
+            header.innerHTML =
+            `<h1>Magazynek IT</h1>
+            <button onclick="renderForm('issue')">Wydanie</button>`;
             highlightIssueTab();
-            magazineButton.removeEventListener("click", highlightMagazineTab);
             loadTable(sectionName);
             break;
         case "inwentaryzacja":
-            header.innerHTML = 
-            `
-                <h1>Magazynek IT</h1>
-                <button onclick="renderForm('inventory')">Inwenatyzacja</button>
-            `;
+            header.innerHTML =
+            `<h1>Magazynek IT</h1>
+            <button onclick="renderForm('inventory')">Inwentaryzacja</button>`;
             highlightInventoryTab();
-            issueButton.removeEventListener("click", highlightIssueTab);
             loadTable(sectionName);
             break;
-        default:
-            renderMagazineButtons();
+        case "inwentaryzacja_sesja":
+            header.innerHTML =
+            `<h1>Magazynek IT</h1>
+            <button>Inwentaryzacja sesja</button>`
+            highlightInventorySessionTab();
+            loadTable(sectionName);
+            break;
     }
 }
 
 function renderMagazineAddProduct() {
     formContainer.style.display = "flex";
     formContainer.innerHTML =
-        `<button onclick="hideForm()" id="closeFormButton">&times;</button>
-        <form method="POST" action="index.php">
-            <input type="hidden" name="addProduct" value="addProduct">
-            <label>Nazwa:</label>
-            <input type="text" name="productName">
-            <label>Kategoria:</label>
-            <input type="text" name="productCategory">
-            <label>Ilość:</label>
-            <input type="number" min="1" name="productQuantity">
-            <label>Lokalizacja:</label>  
-            <input type="text" name="productAdress">
-            <label>Uwagi:</label>
-            <input type="text" name="productComments">
-            <button type="submit" id="submitButton">Zatwierdź</button>
-        </form>`;
+    `<button onclick="hideForm()" id="closeFormButton">&times;</button>
+    <form method="POST" action="index.php">
+        <input type="hidden" name="addProduct" value="addProduct">
+        <label>Nazwa:</label>
+        <input type="text" name="productName">
+        <label>Kategoria:</label>
+        <input type="text" name="productCategory">
+        <label>Ilość:</label>
+        <input type="number" min="1" name="productQuantity">
+        <label>Lokalizacja:</label>
+        <input type="text" name="productAdress">
+        <label>Uwagi:</label>
+        <input type="text" name="productComments">
+        <button type="submit" id="submitButton">Zatwierdź</button>
+    </form>`;
+}
+
+function submitFilter(e) {
+    e.preventDefault();
+    const form = e.target;
+
+    fetch("getTable.php", {
+        method: "POST",
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+        body: new FormData(form)
+    })
+    .then(res => res.text())
+    .then(html => {
+        data.innerHTML = html;
+        hideForm();
+    });
 }
 
 function renderForm(formName) {
@@ -113,49 +133,53 @@ function renderForm(formName) {
         case "magazineAddProduct":
             renderMagazineAddProduct();
             break;
+
         case "magazineEditProduct":
             formContainer.style.display = "flex";
-            formContainer.innerHTML = 
+            formContainer.innerHTML =
             `<button onclick="hideForm()" id="closeFormButton">&times;</button>
             <form method="POST" action="index.php">
-                <input type="hidden" name="addProduct" value="addProduct">
+                <input type="hidden" name="editProduct" value="editProduct">
                 <label>ID produktu:</label>
                 <input type="number" min="1" name="productId">
                 <label>Nazwa:</label>
                 <input type="text" name="productName">
                 <label>Kategoria:</label>
-                <input type="text" name="category">
+                <input type="text" name="productCategory">
                 <label>Ilość:</label>
-                <input type="number" min="1" name="quantity">
-                <label>Lokalizacja:</label>  
-                <input type="text" name="adress">
+                <input type="number" min="1" name="productQuantity">
+                <label>Lokalizacja:</label>
+                <input type="text" name="productAdress">
                 <label>Uwagi:</label>
                 <input type="text" name="productComments">
                 <button type="submit" id="submitButton">Zatwierdź</button>
             </form>`;
             break;
+
         case "magazineDeleteProduct":
             formContainer.style.display = "flex";
-            formContainer.innerHTML = 
+            formContainer.innerHTML =
             `<button onclick="hideForm()" id="closeFormButton">&times;</button>
             <form method="POST" action="index.php">
                 <input type="hidden" name="deleteProduct" value="deleteProduct">
                 <label>ID produktu:</label>
-                <input type="number" name="prdouctId">
+                <input type="number" name="productId">
                 <button type="submit" id="submitButton">Zatwierdź</button>
             </form>`;
             break;
-        case "searchProductUsingName":
+
+        case "searchProductByName":
             formContainer.style.display = "flex";
             formContainer.innerHTML =
             `<button onclick="hideForm()" id="closeFormButton">&times;</button>
-            <form method="POST" action="index.php"></form>
-                <input type="hidden" name="searchProductUsingName" value="searchProductUsingName">
+            <form method="POST" action="getTable.php" onsubmit="submitFilter(event)">
+                <input type="hidden" name="searchProductByName" value="searchProductByName">
                 <label>Nazwa produktu:</label>
-                <input type="text" name="searchProductName">
+                <input type="text" name="productName">
                 <button type="submit" id="submitButton">Zatwierdź</button>
             </form>`;
             break;
+
         case "issue":
             formContainer.style.display = "flex";
             formContainer.innerHTML =
@@ -173,6 +197,7 @@ function renderForm(formName) {
                 <button type="submit" id="submitButton">Zatwierdź</button>
             </form>`;
             break;
+
         case "inventory":
             formContainer.style.display = "flex";
             formContainer.innerHTML =
@@ -181,6 +206,8 @@ function renderForm(formName) {
                 <input type="hidden" name="inventory" value="inventory">
                 <label>Pracownik:</label>
                 <input type="text" name="inventoryEmployee">
+                <label>ID produktu:</label>
+                <input type="text" name="inventoryProductId">
                 <label>Stan:</label>
                 <input type="number" min="1" name="inventoryQuantity">
                 <button type="submit" id="submitButton">Zatwierdź</button>

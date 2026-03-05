@@ -1,0 +1,7 @@
+1.Dodać system logowania i tworzenia użytkowników.
+2.Podpiąć bootsprapa i poprawić ui
+3.Historia dodawania, edycji(dodanie tylko wybranych pól,), usuwania - kto to robił
+4.W tabeli wydania dodać nazwe pracownika z systemu logowania oraz id pracownika
+5.Dodanie historii zakładek, zapamiętywanie która była ostatnia i ona jest aktywna podczas
+sesji. (Opcjonalne)
+6.Refaktoryzacja kodu, aby realizował zasade "o" z SOLID
