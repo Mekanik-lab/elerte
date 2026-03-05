@@ -1,3 +1,4 @@
 1.Dodać system logowania i tworzenia użytkowników.
-3.Historia dodawania, edycji(dodanie tylko wybranych pól), usuwania.
+2.Edycja wybranych pól.
+3.Historia dodawania, edycji, usuwania.
 4.W tabeli wydania dodać nazwe pracownika z systemu logowania oraz id pracownika
