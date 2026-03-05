@@ -1,3 +1,5 @@
+document.addEventListener("DOMContentLoaded", () => {
+
 const headerContent = document.getElementById("headerContent");
 const data = document.getElementById("data");
 const formContainer = document.getElementById("formContainer");
@@ -250,4 +252,4 @@ function renderForm(formName) {
       `);
       break;
   }
-}
+}});

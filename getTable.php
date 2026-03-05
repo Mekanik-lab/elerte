@@ -25,9 +25,10 @@ if (isset($_POST["searchProductByName"]) && $_POST["searchProductByName"] === "s
     $name = trim((string)($_POST["productName"] ?? ""));
 
     if ($name !== "") {
-        $sql = "SELECT * FROM magazyn WHERE nazwa = ?";
+        $sql = "SELECT * FROM magazyn WHERE nazwa LIKE ?;";
         $stmt = mysqli_prepare($database, $sql);
-        mysqli_stmt_bind_param($stmt, "s", $name);
+        $nameParam = "%" . $name . "%";
+        mysqli_stmt_bind_param($stmt, "s", $nameParam);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
 

@@ -145,7 +145,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Magazynek IT</title>
-  <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="./assets/bootstrap/css/bootstrap.min.css">
+  <link rel="shortcut icon" href="./images/favico.png" type="image/x-icon">
 </head>
 <body class="min-vh-100 d-flex flex-column">
 
@@ -182,7 +183,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   </div>
 </aside>
 
-<script src="assets/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="./assets/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="script.js" defer></script>
 </body>
 </html>
