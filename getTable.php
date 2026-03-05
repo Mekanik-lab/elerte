@@ -9,7 +9,7 @@ if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH
 $database = mysqli_connect("localhost", "root", "", "magazyn");
 mysqli_set_charset($database, 'utf8mb4');
 
-function esc($v): string {
+function htmlspecialcharEscapeFunction($v): string {
     return htmlspecialchars((string)$v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
@@ -35,14 +35,14 @@ if (isset($_POST["searchProductByName"]) && $_POST["searchProductByName"] === "s
         echo '<table class="table table-striped table-hover align-middle table-sm mb-0">';
         echo "<thead><tr>";
         while ($field = mysqli_fetch_field($result)) {
-            echo "<th>" . esc($field->name) . "</th>";
+            echo "<th>" . htmlspecialcharEscapeFunction($field->name) . "</th>";
         }
         echo "</tr></thead><tbody>";
 
         while ($row = mysqli_fetch_assoc($result)) {
             echo "<tr>";
             foreach ($row as $value) {
-                echo "<td>" . esc($value) . "</td>";
+                echo "<td>" . htmlspecialcharEscapeFunction($value) . "</td>";
             }
             echo "</tr>";
         }
@@ -63,14 +63,14 @@ echo '<div class="table-responsive">';
 echo '<table class="table table-striped table-hover align-middle table-sm mb-0">';
 echo "<thead><tr>";
 while ($field = mysqli_fetch_field($result)) {
-    echo "<th>" . esc($field->name) . "</th>";
+    echo "<th>" . htmlspecialcharEscapeFunction($field->name) . "</th>";
 }
 echo "</tr></thead><tbody>";
 
 while ($row = mysqli_fetch_assoc($result)) {
     echo "<tr>";
     foreach ($row as $value) {
-        echo "<td>" . esc($value) . "</td>";
+        echo "<td>" . htmlspecialcharEscapeFunction($value) . "</td>";
     }
     echo "</tr>";
 }
