@@ -4,9 +4,10 @@ const formContainer = document.getElementById("formContainer");
 const magazineButton = document.getElementById("magazineButton");
 const issueButton = document.getElementById("issueButton");
 const inventoryButton = document.getElementById("inventoryButton");
+const data = document.getElementById('data');
 
 hideForm();
-renderMagazineButtons();
+renderMagazineButtons("magazyn");
 
 function highlightMagazineTab() {
     document.getElementsByClassName("tab")[0].style.backgroundColor = "rgb(197, 128, 0)";
@@ -26,7 +27,7 @@ function highlightInventoryTab() {
     document.getElementsByClassName("tab")[2].style.backgroundColor = "rgb(197, 128, 0)";  
 }
 
-function renderMagazineButtons() {
+function renderMagazineButtons(sectionName) {
     header.innerHTML = 
     `<h1>Magazynek IT</h1>
     <button onclick="renderForm('magazineAddProduct')">Dodaj</button>
@@ -34,6 +35,20 @@ function renderMagazineButtons() {
         <button onclick="renderForm('magazineDeleteProduct')">Usuń</button>
         <button onclick="renderForm('searchProductUsingName')">Filtruj po nazwie produktu</button>`;
     highlightMagazineTab();
+    loadTable(sectionName);
+}
+
+function loadTable(tableName) {
+    fetch(`getTable.php?table=${tableName}`, {
+        headers: {
+            "X-Requested-With": "XMLHttpRequest"
+        }
+    })
+    .then(res => res.text())
+    .then(html => {
+        console.log(html);
+        data.innerHTML = html;
+    });
 }
 
 function hideForm() {
@@ -42,11 +57,11 @@ function hideForm() {
 }
 
 function loadSection(sectionName) {
-    switch (sectionName)
-    {
+    switch (sectionName) {
         case "magazyn":
-            renderMagazineButtons();
+            renderMagazineButtons(sectionName);
             highlightMagazineTab();
+            loadTable(sectionName);
             break;
         case "wydania":
             header.innerHTML = 
@@ -56,6 +71,7 @@ function loadSection(sectionName) {
             `;
             highlightIssueTab();
             magazineButton.removeEventListener("click", highlightMagazineTab);
+            loadTable(sectionName);
             break;
         case "inwentaryzacja":
             header.innerHTML = 
@@ -65,6 +81,7 @@ function loadSection(sectionName) {
             `;
             highlightInventoryTab();
             issueButton.removeEventListener("click", highlightIssueTab);
+            loadTable(sectionName);
             break;
         default:
             renderMagazineButtons();
@@ -87,7 +104,7 @@ function renderMagazineAddProduct() {
             <input type="text" name="productAdress">
             <label>Uwagi:</label>
             <input type="text" name="productComments">
-            <button type="submit" onclick="hideForm()" id="submitButton">Zatwierdź</button>
+            <button type="submit" id="submitButton">Zatwierdź</button>
         </form>`;
 }
 
@@ -114,7 +131,7 @@ function renderForm(formName) {
                 <input type="text" name="adress">
                 <label>Uwagi:</label>
                 <input type="text" name="productComments">
-                <button type="submit" onclick="hideForm()" id="submitButton">Zatwierdź</button>
+                <button type="submit" id="submitButton">Zatwierdź</button>
             </form>`;
             break;
         case "magazineDeleteProduct":
@@ -122,10 +139,10 @@ function renderForm(formName) {
             formContainer.innerHTML = 
             `<button onclick="hideForm()" id="closeFormButton">&times;</button>
             <form method="POST" action="index.php">
-                <input type="hidden" name="searchProductUsingName" value="searchProductUsingName">
-                <label>Nazwa produktu:</label>
-                <input type="text" name="searchProductName">
-                <button type="submit" onclick="hideForm()" id="submitButton">Zatwierdź</button>
+                <input type="hidden" name="deleteProduct" value="deleteProduct">
+                <label>ID produktu:</label>
+                <input type="number" name="prdouctId">
+                <button type="submit" id="submitButton">Zatwierdź</button>
             </form>`;
             break;
         case "searchProductUsingName":
@@ -136,7 +153,7 @@ function renderForm(formName) {
                 <input type="hidden" name="searchProductUsingName" value="searchProductUsingName">
                 <label>Nazwa produktu:</label>
                 <input type="text" name="searchProductName">
-                <button type="submit" onclick="hideForm()" id="submitButton">Zatwierdź</button>
+                <button type="submit" id="submitButton">Zatwierdź</button>
             </form>`;
             break;
         case "issue":
@@ -153,7 +170,7 @@ function renderForm(formName) {
                 <input type="number" min="1" name="issueQuantity">
                 <label>Powód:</label>
                 <input type="text" name="issueComment">
-                <button type="submit" onclick="hideForm()" id="submitButton">Zatwierdź</button>
+                <button type="submit" id="submitButton">Zatwierdź</button>
             </form>`;
             break;
         case "inventory":
@@ -166,10 +183,8 @@ function renderForm(formName) {
                 <input type="text" name="inventoryEmployee">
                 <label>Stan:</label>
                 <input type="number" min="1" name="inventoryQuantity">
-                <button type="submit" onclick="hideForm()" id="submitButton">Zatwierdź</button>
+                <button type="submit" id="submitButton">Zatwierdź</button>
             </form>`;
             break;
-        default:
-            renderMagazineAddProduct();
     }
 }

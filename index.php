@@ -3,6 +3,35 @@
     if (!$database) {
         die("Błąd połączenia. " . mysqli_connect_error());
     }
+
+    if($_SERVER["REQUEST_METHOD"] === "POST") {
+        if(isset($_POST["addProduct"]) && $_POST["addProduct"] === "addProduct")  {
+            $requiredFields = ['productName', 'productCategory', 'productQuantity', 'productAdress', 'productComments'];
+            $missingFields = [];
+
+            foreach ($requiredFields as $field) {
+                if (empty(trim($_POST[$field] ?? ''))) {
+                    $missingFields[] = $field;
+                }
+            }
+
+            if (!empty($missingFields)) {
+                
+            }
+        } else {
+            $name = $_POST["productName"];
+            $category = $_POST["productCategory"];
+            $quantity = $_POST["productQuantity"];
+            $adress = $_POST["productAdress"];
+            $comment = $_POST["productComments"];
+
+            $sql = "INSERT INTO magazyn (nazwa, kategoria, ilosc, lokalizacja, uwagi) VALUES (?, ?, ?, ?, ?);";
+            $stmt = mysqli_prepare($database, $sql);
+            mysqli_bind_param("ssiss", $name, $category, $quantity, $adress, $comment);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+        }
+    }
 ?>
 
 <!DOCTYPE html>
@@ -30,48 +59,6 @@
         </section>
     </aside>
     <section id="data">
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Nazwa</th>
-                <th>Kategoria</th>
-                <th>Ilość</th>
-                <th>Lokalizacja</th>
-                <th>Uwagi</th>
-            </tr>
-        </thead>
-        <?php
-            $sql = "SELECT * FROM magazyn";
-                    $query = mysqli_query($database, $sql);
-                    while($row = mysqli_fetch_assoc($query)) {
-                        echo "
-                        <tbody>
-                            <tr>
-                                <td>" . $row["id"] ."</td>
-                                <td>" . $row["nazwa"] ."</td>
-                                <td>" . $row["kategoria"] ."</td>
-                                <td>" . $row["ilosc"] ."</td>
-                                <td>" . $row["lokalizacja"] ."</td>
-                                <td>" . $row['uwagi'] . "</td>
-                            </tr>
-                        </tbody>";
-                    }
-
-            if($_SERVER['REQUEST_METHOD'] === "POST") {
-                if ($_POST['addProduct'] == "addProduct") {
-                    $stmt = mysqli_prepare($database, "INSERT INTO magazyn (nazwa, kategoria, ilosc, lokalizacja, uwagi) VALUES (?, ?, ?, ?, ?);");
-                    $name = $_POST["productName"];
-                    $category = $_POST["productCategory"];
-                    $quantity = $_POST["productQuantity"];
-                    $adress = $_POST["productAdress"];
-                    $comments = $_POST["productComments"];
-                    mysqli_stmt_bind_param($stmt, "ssiss", $name, $category, $quantity, $adress, $comments);
-                    mysqli_stmt_execute($stmt);
-                }
-            }
-        ?>
-    </table>
     </section>
     </main>
     <aside id="formContainer">
