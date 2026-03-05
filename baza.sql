@@ -18,7 +18,7 @@ CREATE TABLE wydania (
     id_pozycji INT UNSIGNED NOT NULL,
     ilosc INT NOT NULL CHECK (ilosc > 0),
     powod VARCHAR(500),
-    CONSTRAINT fk_wydania_magazyn
+    CONSTRAINT fk_wydania_magazyn   
       FOREIGN KEY (id_pozycji) REFERENCES magazyn(id)
       ON DELETE CASCADE
       ON UPDATE CASCADE
@@ -48,7 +48,6 @@ CREATE TABLE inwentaryzacja (
 
 DELIMITER //
 
-DROP TRIGGER IF EXISTS wydanie_kontrola_stanu//
 CREATE TRIGGER wydanie_kontrola_stanu
 BEFORE INSERT ON wydania
 FOR EACH ROW
@@ -75,7 +74,6 @@ BEGIN
     END IF;
 END//
 
-DROP TRIGGER IF EXISTS policz_roznice_przy_inwentaryzacji//
 CREATE TRIGGER policz_roznice_przy_inwentaryzacji
 BEFORE INSERT ON inwentaryzacja
 FOR EACH ROW
@@ -95,7 +93,6 @@ BEGIN
 END//
 
 /* Po dodaniu wpisu inwentaryzacji od razu nadpisz stan magazynu */
-DROP TRIGGER IF EXISTS zastosuj_inwentaryzacje_od_razu//
 CREATE TRIGGER zastosuj_inwentaryzacje_od_razu
 AFTER INSERT ON inwentaryzacja
 FOR EACH ROW
