@@ -1,23 +1,34 @@
 <?php
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+session_start();
+include "connection.php";
+include "functions.php";
 
-$database = mysqli_connect('localhost', 'root', '', 'magazyn');
-mysqli_set_charset($database, 'utf8mb4');
-
-if (!$database) {
-    die("Błąd połączenia. " . mysqli_connect_error());
+if (empty($_SESSION["login"]) || empty($_SESSION["userId"])) {
+    header("Location: login.php");
+    exit;
 }
 
-function getPostText(string $fieldName): string {
-    return trim((string)($_POST[$fieldName] ?? ""));
+$userId = (int)$_SESSION["userId"];
+
+$sql = "SELECT status_konta FROM uzytkownicy WHERE id = ?";
+$stmt = mysqli_prepare($database, $sql);
+mysqli_stmt_bind_param($stmt, "i", $userId);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+$user = mysqli_fetch_assoc($result);
+mysqli_stmt_close($stmt);
+
+if (!$user || $user["status_konta"] === "nieaktywne") {
+    session_unset();
+    session_destroy();
+    header("Location: login.php");
+    exit;
 }
-function getPostNumber(string $fieldName): int {
-    return (int)($_POST[$fieldName] ?? 0);
-}
+
+$sessionUserId = (int)$_SESSION['userId'];
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-    // ADD PRODUCT
     if (isset($_POST["addProduct"]) && $_POST["addProduct"] === "addProduct") {
         $name = getPostText("productName");
         $category = getPostText("productCategory");
@@ -26,9 +37,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $comment = getPostText("productComments");
 
         if ($name !== "" && $quantity >= 0) {
-            $sql = "INSERT INTO magazyn (nazwa, kategoria, ilosc, lokalizacja, uwagi) VALUES (?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO magazyn (id_uzytkownika, nazwa, kategoria, ilosc, lokalizacja, uwagi)
+                    VALUES (?, ?, ?, ?, ?, ?)";
             $stmt = mysqli_prepare($database, $sql);
-            mysqli_stmt_bind_param($stmt, "ssiss", $name, $category, $quantity, $adress, $comment);
+            mysqli_stmt_bind_param($stmt, "ississ", $sessionUserId, $name, $category, $quantity, $adress, $comment);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);
         }
@@ -37,7 +49,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         exit;
     }
 
-    // EDIT PRODUCT
     if (isset($_POST["editProduct"]) && $_POST["editProduct"] === "editProduct") {
         $id = getPostNumber("productId");
         $name = getPostText("productName");
@@ -60,7 +71,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         exit;
     }
 
-    // DELETE PRODUCT (fizycznie)
     if (isset($_POST["deleteProduct"]) && $_POST["deleteProduct"] === "deleteProduct") {
         $id = getPostNumber("productId");
 
@@ -72,7 +82,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             try {
                 mysqli_stmt_execute($stmt);
             } catch (mysqli_sql_exception $e) {
-                // Przy CASCADE raczej nie poleci, ale zostawiamy na przyszłość
             } finally {
                 mysqli_stmt_close($stmt);
             }
@@ -82,22 +91,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         exit;
     }
 
-    // ISSUE (wydanie)
     if (isset($_POST["issue"]) && $_POST["issue"] === "issue") {
-        $employee = getPostText("employee");
-        $positionId = getPostNumber("positionId");
+        $positionId = getPostNumber("productId");
         $issueQuantity = getPostNumber("issueQuantity");
         $issueComment = getPostText("issueComment");
 
-        if ($employee !== "" && $positionId > 0 && $issueQuantity > 0) {
-            $sql = "INSERT INTO wydania (pracownik, id_pozycji, ilosc, powod) VALUES (?, ?, ?, ?)";
+        if ($positionId > 0 && $issueQuantity > 0) {
+            $sql = "INSERT INTO wydania (id_uzytkownika, id_produktu, ilosc, powod)
+                    VALUES (?, ?, ?, ?)";
             $stmt = mysqli_prepare($database, $sql);
-            mysqli_stmt_bind_param($stmt, "siis", $employee, $positionId, $issueQuantity, $issueComment);
+            mysqli_stmt_bind_param($stmt, "iiis", $sessionUserId, $positionId, $issueQuantity, $issueComment);
 
             try {
                 mysqli_stmt_execute($stmt);
             } catch (mysqli_sql_exception $e) {
-                // trigger może zablokować (za mało na stanie)
             } finally {
                 mysqli_stmt_close($stmt);
             }
@@ -107,28 +114,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         exit;
     }
 
-    // INVENTORY (sesja + wpis) => stan magazynu nadpisuje trigger
     if (isset($_POST["inventory"]) && $_POST["inventory"] === "inventory") {
-        $employee = getPostText("inventoryEmployee");
         $productId = getPostNumber("inventoryProductId");
         $quantity = getPostNumber("inventoryQuantity");
 
-        if ($employee !== "" && $productId > 0 && $quantity >= 0) {
-            $sql = "INSERT INTO inwentaryzacja_sesja (data_sesji, stworzone_przez) VALUES (NOW(), ?)";
+        if ($productId > 0 && $quantity >= 0) {
+            $operacja = "Inwentaryzacja";
+
+            $sql = "INSERT INTO inwentaryzacja_sesja (id_uzytkownika, data_sesji)
+                    VALUES (?, NOW())";
             $stmt = mysqli_prepare($database, $sql);
-            mysqli_stmt_bind_param($stmt, "s", $employee);
+            mysqli_stmt_bind_param($stmt, "i", $sessionUserId);
             mysqli_stmt_execute($stmt);
             $sessionId = mysqli_insert_id($database);
             mysqli_stmt_close($stmt);
 
-            $sql = "INSERT INTO inwentaryzacja (id_sesji, id_produktu, stan) VALUES (?, ?, ?)";
+            $sql = "INSERT INTO inwentaryzacja (id_sesji, id_produktu, stan)
+                    VALUES (?, ?, ?)";
             $stmt = mysqli_prepare($database, $sql);
             mysqli_stmt_bind_param($stmt, "iii", $sessionId, $productId, $quantity);
 
             try {
                 mysqli_stmt_execute($stmt);
             } catch (mysqli_sql_exception $e) {
-                // np. brak produktu
             } finally {
                 mysqli_stmt_close($stmt);
             }
@@ -138,6 +146,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         exit;
     }
 }
+
+mysqli_close($database);
 ?>
 <!DOCTYPE html>
 <html lang="pl">
@@ -163,6 +173,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="wydania" id="issueButton">Wydania</button>
       <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="inwentaryzacja" id="inventoryButton">Inwentaryzacja</button>
       <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="inwentaryzacja_sesja" id="inventorySessionButton">Inwentaryzacja sesja</button>
+      <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="uzytkownicy" id="usersButton">Użytkownicy</button>
+      <a href="logout.php" class="btn btn-dark text-start fw-semibold mt-3">Wyloguj</a>
+      <a href="deactivation.php" class="btn btn-dark text-start fw-semibold mt-0" onclick="return confirm('Czy na pewno chcesz nieodwracalnie dezaktywować konto? Po dezaktywacji logowanie będzie niemożliwe.')">Dezaktywuj konto</a>
     </div>
   </aside>
 
