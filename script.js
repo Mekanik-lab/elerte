@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <button class="btn btn-light" data-form="magazineAddProduct">Dodaj</button>
             <button class="btn btn-light" data-form="magazineEditProduct">Edytuj</button>
             <button class="btn btn-danger" data-form="magazineDeleteProduct">Usuń</button>
-            <button class="btn btn-dark" data-form="searchProductByName">Filtruj po nazwie</button>
+            <button class="btn btn-light" data-form="searchProductByName">Filtruj po nazwie</button>
             <button class="btn btn-light" data-form="issue">Wydanie</button>
             <button class="btn btn-light" data-form="inventory">Inwentaryzacja</button>
           </div>
@@ -247,7 +247,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <input type="text" name="productName" class="form-control" required>
             </div>
 
-            <button type="submit" class="btn btn-dark">Szukaj</button>
+            <button type="submit" class="btn btn-warning">Szukaj</button>
           </form>
         `);
         break;

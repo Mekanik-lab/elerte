@@ -78,16 +78,16 @@ if (isset($_POST["searchProductByName"]) && $_POST["searchProductByName"] === "s
 if ($table === "uzytkownicy") {
     $sql = "SELECT 
                 id,
-                CONCAT(imie, ' ', nazwisko) AS `Imię i nazwisko`,
-                status_konta AS `Status konta`,
-                rola AS `Rola`
+                CONCAT(imie, ' ', nazwisko) AS 'imię i nazwisko',
+                status_konta AS 'status konta',
+                rola AS `rola`
             FROM uzytkownicy";
 } elseif ($table === "magazyn") {
     $sql = "SELECT 
                 magazyn.id,
                 magazyn.id_uzytkownika,
-                magazyn.nazwa AS 'Nazwa produktu',
-                CONCAT(uzytkownicy.imie, ' ', uzytkownicy.nazwisko) AS `Dodał`,
+                CONCAT(uzytkownicy.imie, ' ', uzytkownicy.nazwisko) AS 'dodał',
+                magazyn.nazwa AS 'nazwa produktu',
                 magazyn.kategoria,
                 magazyn.jednostka,
                 magazyn.ilosc,
@@ -99,10 +99,10 @@ if ($table === "uzytkownicy") {
     $sql = "SELECT 
                 wydania.id,
                 wydania.id_produktu,
-                magazyn.nazwa AS 'Nazwa produktu',
                 wydania.id_uzytkownika,
-                CONCAT(uzytkownicy.imie, ' ', uzytkownicy.nazwisko) AS `Wydał`,
+                CONCAT(uzytkownicy.imie, ' ', uzytkownicy.nazwisko) AS 'wydał',
                 wydania.data_i_godzina,
+                magazyn.nazwa AS 'nazwa produktu',
                 magazyn.jednostka,
                 wydania.ilosc,
                 wydania.powod
@@ -112,10 +112,11 @@ if ($table === "uzytkownicy") {
 } else if ($table === "inwentaryzacja") {
     $sql = "SELECT
             inwentaryzacja.id,
+            inwentaryzacja.id_produktu,
             inwentaryzacja.id_sesji,
             inwentaryzacja_sesja.id_uzytkownika,
-            CONCAT(uzytkownicy.imie, ' ', uzytkownicy.nazwisko) AS `Zinwentaryzował`,
-            inwentaryzacja.id_produktu,
+            CONCAT(uzytkownicy.imie, ' ', uzytkownicy.nazwisko) AS 'zinwentaryzował',
+            magazyn.nazwa AS 'nazwa produktu',
             magazyn.jednostka,
             inwentaryzacja.stan,
             inwentaryzacja.roznica
@@ -130,7 +131,7 @@ if ($table === "uzytkownicy") {
     $sql = "SELECT 
                 inwentaryzacja_sesja.id,
                 inwentaryzacja_sesja.id_uzytkownika,
-                CONCAT(uzytkownicy.imie, ' ', uzytkownicy.nazwisko) AS `Imię i nazwisko`,
+                CONCAT(uzytkownicy.imie, ' ', uzytkownicy.nazwisko) AS 'imię i nazwisko',
                 inwentaryzacja_sesja.data_sesji 
             FROM inwentaryzacja_sesja
             INNER JOIN uzytkownicy ON inwentaryzacja_sesja.id_uzytkownika = uzytkownicy.id";
