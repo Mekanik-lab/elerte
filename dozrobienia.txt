@@ -1,3 +1,2 @@
 1.Tabel konfiguracja (rejestracja)
-2.Edycja, kasowanie, wydawanie, inwentaryzowanie wybranych rekordów, buttony na pasku rekordu
-3.Historia edycji, usuwania.
+2.Historia akcji.

@@ -17,9 +17,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $imie = getPostText('imie');
     $nazwisko = getPostText('nazwisko');
 
-    if (empty($login) || empty($password) || empty($repeatPassword) empty($imie) || empty($nazwisko)) {
+    if ($login === '' || $password === '' || $repeatPassword === '' || $imie === '' || $nazwisko === '') {
         $error = "Wszystkie pola są wymagane.";
-    } else if ($password !== $repeatPassword) {
+    } elseif ($password !== $repeatPassword) {
         $error = "Hasła nie są takie same.";
     } else {
         $sqlCheck = "SELECT id FROM uzytkownicy WHERE login = ? LIMIT 1";

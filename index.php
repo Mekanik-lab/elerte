@@ -44,9 +44,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);
         }
-
-        header("Location: index.php");
-        exit;
     }
 
     if (isset($_POST["editProduct"]) && $_POST["editProduct"] === "editProduct") {
@@ -66,9 +63,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);
         }
-
-        header("Location: index.php");
-        exit;
     }
 
     if (isset($_POST["deleteProduct"]) && $_POST["deleteProduct"] === "deleteProduct") {
@@ -86,9 +80,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 mysqli_stmt_close($stmt);
             }
         }
-
-        header("Location: index.php");
-        exit;
     }
 
     if (isset($_POST["issue"]) && $_POST["issue"] === "issue") {
@@ -109,9 +100,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 mysqli_stmt_close($stmt);
             }
         }
-
-        header("Location: index.php");
-        exit;
     }
 
     if (isset($_POST["inventory"]) && $_POST["inventory"] === "inventory") {
@@ -141,9 +129,43 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 mysqli_stmt_close($stmt);
             }
         }
+    }
 
-        header("Location: index.php");
-        exit;
+    if (isset($_POST["changeLogin"]) && $_POST["changeLogin"] === "1") {
+        $newLogin = getPostText("newLogin");
+
+        if ($newLogin !== "") {
+            $sql = "UPDATE uzytkownicy SET login = ? WHERE id = ?";
+            $stmt = mysqli_prepare($database, $sql);
+            mysqli_stmt_bind_param($stmt, "si", $newLogin, $sessionUserId);
+
+            try {
+                mysqli_stmt_execute($stmt);
+            } catch (mysqli_sql_exception $e) {
+            } finally {
+                mysqli_stmt_close($stmt);
+            }
+        }
+    }
+
+    if (isset($_POST["changePassword"]) && $_POST["changePassword"] === "1") {
+        $newPassword = getPostText("newPassword");
+        $confirmPassword = getPostText("confirmPassword");
+
+        if ($newPassword !== "" && $newPassword === $confirmPassword) {
+            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+
+            $sql = "UPDATE uzytkownicy SET haslo = ? WHERE id = ?";
+            $stmt = mysqli_prepare($database, $sql);
+            mysqli_stmt_bind_param($stmt, "si", $hashedPassword, $sessionUserId);
+
+            try {
+                mysqli_stmt_execute($stmt);
+            } catch (mysqli_sql_exception $e) {
+            } finally {
+                mysqli_stmt_close($stmt);
+            }
+        }
     }
 }
 
@@ -174,8 +196,8 @@ mysqli_close($database);
       <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="inwentaryzacja" id="inventoryButton">Inwentaryzacja</button>
       <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="inwentaryzacja_sesja" id="inventorySessionButton">Inwentaryzacja sesja</button>
       <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="uzytkownicy" id="usersButton">Użytkownicy</button>
+      <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="ustawienia_konta" id="accountSettings">Ustawienia konta</button>
       <a href="logout.php" class="btn btn-dark text-start fw-semibold mt-3">Wyloguj</a>
-      <a href="deactivation.php" class="btn btn-dark text-start fw-semibold mt-0" onclick="return confirm('Czy na pewno chcesz nieodwracalnie dezaktywować konto? Po dezaktywacji logowanie będzie niemożliwe.')">Dezaktywuj konto</a>
     </div>
   </aside>
 

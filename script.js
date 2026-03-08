@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const formContainer = document.getElementById("formContainer");
   const formModalEl = document.getElementById("formModal");
   const formModalTitle = document.getElementById("formModalTitle");
-
   const formModal = new bootstrap.Modal(formModalEl);
 
   init();
@@ -33,7 +32,29 @@ document.addEventListener("DOMContentLoaded", () => {
       .then(res => res.text())
       .then(html => {
         data.innerHTML = html;
+        bindRowButtons();
       });
+  }
+
+  function loadSettings() {
+    data.innerHTML = `
+    <div class="d-flex flex-wrap gap-2">
+      <a href="deactivation.php" id="deactivateBtn" class="btn btn-dark text-start fw-semibold mt-0">Dezaktywuj konto</a>
+      <button class="btn btn-dark fw-semibold" data-form="zmien_login">Zmień login</button>
+      <button class="btn btn-dark fw-semibold" data-form="zmien_haslo">Zmień hasło</button>
+    </div>
+    `;
+
+    const deactivateBtn = document.getElementById("deactivateBtn");
+    deactivateBtn.addEventListener("click", function(e) {
+    if (!confirm("Czy na pewno chcesz nieodwracalnie dezaktywować konto? Po dezaktywacji logowanie będzie niemożliwe.")) {
+      e.preventDefault();
+    }
+  });
+
+  data.querySelectorAll("button[data-form]").forEach(btn => {
+    btn.addEventListener("click", () => renderForm(btn.dataset.form));
+  });
   }
 
   function loadSection(sectionName) {
@@ -45,11 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <h1 class="h4 m-0">Magazynek IT</h1>
           <div class="d-flex flex-wrap gap-2">
             <button class="btn btn-light" data-form="magazineAddProduct">Dodaj</button>
-            <button class="btn btn-light" data-form="magazineEditProduct">Edytuj</button>
-            <button class="btn btn-danger" data-form="magazineDeleteProduct">Usuń</button>
             <button class="btn btn-light" data-form="searchProductByName">Filtruj po nazwie</button>
-            <button class="btn btn-light" data-form="issue">Wydanie</button>
-            <button class="btn btn-light" data-form="inventory">Inwentaryzacja</button>
           </div>
         `;
         bindHeaderButtons();
@@ -57,48 +74,28 @@ document.addEventListener("DOMContentLoaded", () => {
         break;
 
       case "wydania":
-        headerContent.innerHTML = `
-          <h1 class="h4 m-0">Wydania</h1>
-          <div class="d-flex flex-wrap gap-2">
-            <span class="badge text-bg-dark">Pogląd wydania</span>
-          </div>
-        `;
-        bindHeaderButtons();
+        headerContent.innerHTML = `<h1 class="h4 m-0">Wydania</h1>`;
         loadTable(sectionName);
         break;
 
       case "inwentaryzacja":
-        headerContent.innerHTML = `
-          <h1 class="h4 m-0">Inwentaryzacja</h1>
-          <div class="d-flex flex-wrap gap-2">
-            <span class="badge text-bg-dark">Pogląd inwentaryzacji</span>
-          </div>
-        `;
-        bindHeaderButtons();
+        headerContent.innerHTML = `<h1 class="h4 m-0">Inwentaryzacja</h1>`;
         loadTable(sectionName);
         break;
 
       case "inwentaryzacja_sesja":
-        headerContent.innerHTML = `
-          <h1 class="h4 m-0">Inwentaryzacja sesja</h1>
-          <div class="d-flex flex-wrap gap-2">
-            <span class="badge text-bg-dark">Pogląd sesji inwentaryzacji</span>
-          </div>
-        `;
-        bindHeaderButtons();
+        headerContent.innerHTML = `<h1 class="h4 m-0">Inwentaryzacja sesja</h1>`;
         loadTable(sectionName);
         break;
 
       case "uzytkownicy":
-        headerContent.innerHTML = `
-          <h1 class="h4 m-0">Użytkownicy</h1>
-          <div class="d-flex flex-wrap gap-2">
-            <span class="badge text-bg-dark">Pogląd użytkowników</span>
-          </div>
-        `;
-        bindHeaderButtons();
+        headerContent.innerHTML = `<h1 class="h4 m-0">Użytkownicy</h1>`;
         loadTable(sectionName);
         break;
+      
+      case "ustawienia_konta":
+        headerContent.innerHTML = `<h1 class="h4 m-0">Ustawienia konta</h1>`;
+        loadSettings();
     }
   }
 
@@ -108,9 +105,26 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function hideForm() {
-    formContainer.innerHTML = "";
-    formModal.hide();
+  function bindRowButtons() {
+    document.querySelectorAll("tr[data-id]").forEach(row => {
+      const id = row.dataset.id;
+
+      const cells = Array.from(row.querySelectorAll("td")).map(td =>
+        td.textContent.trim()
+      );
+
+      row.querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const action = btn.classList.contains("editBtn") ? "edit" :
+                         btn.classList.contains("deleteBtn") ? "delete" :
+                         btn.classList.contains("issueBtn") ? "issue" :
+                         btn.classList.contains("inventoryBtn") ? "inventory" : null;
+
+          if (!action) return;
+          renderRowForm(action, id, cells);
+        });
+      });
+    });
   }
 
   function showForm(title, html) {
@@ -136,12 +150,120 @@ document.addEventListener("DOMContentLoaded", () => {
       .then(res => res.text())
       .then(html => {
         data.innerHTML = html;
-        hideForm();
+        formModal.hide();
+        formContainer.innerHTML = "";
       });
+  }
+
+  function renderRowForm(action, id, cells) {
+
+    if (action === "edit") {
+
+      const productName = cells[3];
+      const category = cells[4];
+      const unit = cells[5];
+      const quantity = cells[6];
+      const location = cells[7];
+      const comments = cells[8];
+
+      showForm("Edytuj produkt", `
+        <form method="POST" action="index.php" class="d-grid gap-2">
+          <input type="hidden" name="editProduct" value="editProduct">
+          <input type="hidden" name="productId" value="${id}">
+
+          <div>
+            <label class="form-label">Nazwa</label>
+            <input type="text" name="productName" class="form-control" value="${productName}" required>
+          </div>
+
+          <div>
+            <label class="form-label">Kategoria</label>
+            <input type="text" name="productCategory" class="form-control" value="${category}">
+          </div>
+
+          <div>
+            <label class="form-label">Ilość</label>
+            <input type="number" min="0" name="productQuantity" class="form-control" value="${quantity}" required>
+          </div>
+
+          <div>
+            <label class="form-label">Jednostka</label>
+            <input type="text" name="productUnit" class="form-control" value="${unit}" required>
+          </div>
+
+          <div>
+            <label class="form-label">Lokalizacja</label>
+            <input type="text" name="productAdress" class="form-control" value="${location}">
+          </div>
+
+          <div>
+            <label class="form-label">Uwagi</label>
+            <input type="text" name="productComments" class="form-control" value="${comments}">
+          </div>
+
+          <button type="submit" class="btn btn-warning">Zatwierdź</button>
+        </form>
+      `);
+
+      return;
+    }
+
+    if (action === "delete") {
+      showForm("Usuń produkt", `
+        <form method="POST" action="index.php" class="d-grid gap-2">
+          <input type="hidden" name="deleteProduct" value="deleteProduct">
+          <input type="hidden" name="productId" value="${id}">
+          <p>Czy na pewno chcesz usunąć produkt o ID: <strong>${id}</strong>?</p>
+          <button type="submit" class="btn btn-danger">Usuń</button>
+        </form>
+      `);
+      return;
+    }
+
+    if (action === "issue") {
+      showForm("Wydanie", `
+        <form method="POST" action="index.php" class="d-grid gap-2">
+          <input type="hidden" name="issue" value="issue">
+          <input type="hidden" name="productId" value="${id}">
+
+          <div>
+            <label class="form-label">Ilość</label>
+            <input type="number" min="1" name="issueQuantity" class="form-control" required>
+          </div>
+
+          <div>
+            <label class="form-label">Powód</label>
+            <input type="text" name="issueComment" class="form-control">
+          </div>
+
+          <button type="submit" class="btn btn-warning">Zatwierdź</button>
+        </form>
+      `);
+      return;
+    }
+
+    if (action === "inventory") {
+      let quantity = cells[6];
+      showForm("Inwentaryzacja", `
+        <form method="POST" action="index.php" class="d-grid gap-2">
+          <input type="hidden" name="inventory" value="inventory">
+          <input type="hidden" name="inventoryProductId" value="${id}">
+
+          <div>
+            <label class="form-label">Stan</label>
+            <input type="number" min="0" name="inventoryQuantity" class="form-control" value="${quantity}" required>
+          </div>
+
+          <button type="submit" class="btn btn-warning">Zatwierdź</button>
+        </form>
+      `);
+      return;
+    }
   }
 
   function renderForm(formName) {
     switch (formName) {
+
       case "magazineAddProduct":
         showForm("Dodaj produkt", `
           <form method="POST" action="index.php" class="d-grid gap-2">
@@ -182,61 +304,6 @@ document.addEventListener("DOMContentLoaded", () => {
         `);
         break;
 
-      case "magazineEditProduct":
-        showForm("Edytuj produkt", `
-          <form method="POST" action="index.php" class="d-grid gap-2">
-            <input type="hidden" name="editProduct" value="editProduct">
-
-            <div>
-              <label class="form-label">ID produktu</label>
-              <input type="number" min="1" name="productId" class="form-control" required>
-            </div>
-
-            <div>
-              <label class="form-label">Nazwa</label>
-              <input type="text" name="productName" class="form-control" required>
-            </div>
-
-            <div>
-              <label class="form-label">Kategoria</label>
-              <input type="text" name="productCategory" class="form-control">
-            </div>
-
-            <div>
-              <label class="form-label">Ilość</label>
-              <input type="number" min="0" name="productQuantity" class="form-control" required>
-            </div>
-
-            <div>
-              <label class="form-label">Lokalizacja</label>
-              <input type="text" name="productAdress" class="form-control">
-            </div>
-
-            <div>
-              <label class="form-label">Uwagi</label>
-              <input type="text" name="productComments" class="form-control">
-            </div>
-
-            <button type="submit" class="btn btn-warning">Zatwierdź</button>
-          </form>
-        `);
-        break;
-
-      case "magazineDeleteProduct":
-        showForm("Usuń produkt", `
-          <form method="POST" action="index.php" class="d-grid gap-2">
-            <input type="hidden" name="deleteProduct" value="deleteProduct">
-
-            <div>
-              <label class="form-label">ID produktu</label>
-              <input type="number" min="1" name="productId" class="form-control" required>
-            </div>
-
-            <button type="submit" class="btn btn-danger">Usuń</button>
-          </form>
-        `);
-        break;
-
       case "searchProductByName":
         showForm("Filtruj po nazwie", `
           <form method="POST" action="getTable.php" data-filter="1" class="d-grid gap-2">
@@ -252,50 +319,35 @@ document.addEventListener("DOMContentLoaded", () => {
         `);
         break;
 
-      case "issue":
-        showForm("Wydanie", `
-          <form method="POST" action="index.php" class="d-grid gap-2">
-            <input type="hidden" name="issue" value="issue">
+        case "zmien_login":
+      showForm("Zmień login", `
+        <form method="POST" action="index.php" class="d-grid gap-2">
+          <input type="hidden" name="changeLogin" value="1">
+          <div>
+            <label class="form-label">Nowy login</label>
+            <input type="text" name="newLogin" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-warning">Zmień login</button>
+        </form>
+      `);
+      break;
 
-            <div>
-              <label class="form-label">ID pozycji</label>
-              <input type="number" min="1" name="productId" class="form-control" required>
-            </div>
-
-            <div>
-              <label class="form-label">Ilość</label>
-              <input type="number" min="1" name="issueQuantity" class="form-control" required>
-            </div>
-
-            <div>
-              <label class="form-label">Powód</label>
-              <input type="text" name="issueComment" class="form-control">
-            </div>
-
-            <button type="submit" class="btn btn-warning">Zatwierdź</button>
-          </form>
-        `);
-        break;
-
-      case "inventory":
-        showForm("Inwentaryzacja", `
-          <form method="POST" action="index.php" class="d-grid gap-2">
-            <input type="hidden" name="inventory" value="inventory">
-
-            <div>
-              <label class="form-label">ID produktu</label>
-              <input type="number" min="1" name="inventoryProductId" class="form-control" required>
-            </div>
-
-            <div>
-              <label class="form-label">Stan</label>
-              <input type="number" min="0" name="inventoryQuantity" class="form-control" required>
-            </div>
-
-            <button type="submit" class="btn btn-warning">Zatwierdź</button>
-          </form>
-        `);
-        break;
+    case "zmien_haslo":
+      showForm("Zmień hasło", `
+        <form method="POST" action="index.php" class="d-grid gap-2">
+          <input type="hidden" name="changePassword" value="1">
+          <div>
+            <label class="form-label">Nowe hasło</label>
+            <input type="password" name="newPassword" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">Potwierdź hasło</label>
+            <input type="password" name="confirmPassword" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-warning">Zmień hasło</button>
+        </form>
+      `);
+      break;
     }
   }
 });
