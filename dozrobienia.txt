@@ -1,2 +1,1 @@
-1.Wygląd pod telefony
-2.Wersja pod php 7.4.x 
+działa
