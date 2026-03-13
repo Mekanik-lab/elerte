@@ -58,36 +58,59 @@ document.addEventListener("DOMContentLoaded", () => {
     let startY = 0;
     let initialLeft = 0;
     let initialTop = 0;
+    let hasInitializedPosition = false;
 
-    header.addEventListener("mousedown", e => {
+    header.style.touchAction = "none";
+    header.style.cursor = "move";
+
+    header.addEventListener("pointerdown", e => {
       if (e.target.closest(".btn-close")) return;
 
-      const rect = dialog.getBoundingClientRect();
-      isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      initialLeft = rect.left;
-      initialTop = rect.top;
+        const rect = dialog.getBoundingClientRect();
 
-      dialog.style.left = `${initialLeft}px`;
-      dialog.style.top = `${initialTop}px`;
-      dialog.style.transform = "none";
-    });
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
 
-    document.addEventListener("mousemove", e => {
-      if (!isDragging) return;
+        if (!hasInitializedPosition) {
+          initialLeft = rect.left;
+          initialTop = rect.top;
 
-      const nextLeft = initialLeft + (e.clientX - startX);
-      const nextTop = initialTop + (e.clientY - startY);
+          dialog.style.position = "fixed";
+          dialog.style.margin = "0";
+          dialog.style.left = `${initialLeft}px`;
+          dialog.style.top = `${initialTop}px`;
+          dialog.style.transform = "none";
 
-      dialog.style.left = `${Math.max(0, nextLeft)}px`;
-      dialog.style.top = `${Math.max(0, nextTop)}px`;
-      dialog.style.transform = "none";
-    });
+          hasInitializedPosition = true;
+        } else {
+          initialLeft = parseFloat(dialog.style.left) || rect.left;
+          initialTop = parseFloat(dialog.style.top) || rect.top;
+        }
 
-    document.addEventListener("mouseup", () => {
-      isDragging = false;
-    });
+        header.setPointerCapture?.(e.pointerId);
+      });
+
+      header.addEventListener("pointermove", e => {
+        if (!isDragging) return;
+
+        const nextLeft = initialLeft + (e.clientX - startX);
+        const nextTop = initialTop + (e.clientY - startY);
+
+        dialog.style.left = `${Math.max(0, nextLeft)}px`;
+        dialog.style.top = `${Math.max(0, nextTop)}px`;
+        dialog.style.transform = "none";
+      });
+
+      const stopDragging = e => {
+        isDragging = false;
+        if (e?.pointerId != null) {
+          header.releasePointerCapture?.(e.pointerId);
+        }
+      };
+
+      header.addEventListener("pointerup", stopDragging);
+      header.addEventListener("pointercancel", stopDragging);
   }
 
   function setHeader(title, actionsHtml = "") {
