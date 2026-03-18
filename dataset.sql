@@ -1,0 +1,86 @@
+INSERT INTO magazyn (id_uzytkownika, nazwa, kategoria, jednostka, ilosc, lokalizacja, uwagi) VALUES
+(1, 'Mysz przewodowa USB', 'Peryferia', 'szt.', 12, 'E-02-01', 'Czarna'),
+(1, 'Mysz bezprzewodowa USB', 'Peryferia', 'szt.', 8, 'E-02-02', 'Z nano odbiornikiem'),
+(1, 'Klawiatura przewodowa USB', 'Peryferia', 'szt.', 10, 'E-02-03', 'Układ PL'),
+(1, 'Klawiatura bezprzewodowa', 'Peryferia', 'szt.', 6, 'E-02-04', 'Układ PL'),
+(1, 'Podkładka pod mysz', 'Peryferia', 'szt.', 15, 'E-02-05', 'Czarna'),
+
+(1, 'Monitor 24 cale', 'Sprzęt', 'szt.', 4, 'E-03-01', 'Full HD'),
+(1, 'Monitor 27 cale', 'Sprzęt', 'szt.', 2, 'E-03-02', 'QHD'),
+(1, 'Kabel HDMI 1m', 'Okablowanie', 'szt.', 14, 'E-03-03', 'Czarny'),
+(1, 'Kabel HDMI 2m', 'Okablowanie', 'szt.', 12, 'E-03-04', 'Czarny'),
+(1, 'Kabel DisplayPort 2m', 'Okablowanie', 'szt.', 10, 'E-03-05', 'DP 1.2'),
+
+(1, 'Adapter HDMI-VGA', 'Adaptery', 'szt.', 5, 'F-01-01', 'Do starszych monitorów'),
+(1, 'Adapter USB-C HDMI', 'Adaptery', 'szt.', 6, 'F-01-02', 'Do laptopów'),
+(1, 'Adapter USB-A RJ45', 'Adaptery', 'szt.', 4, 'F-01-03', 'Karta sieciowa USB'),
+(1, 'Adapter USB-C RJ45', 'Adaptery', 'szt.', 4, 'F-01-04', 'Gigabit Ethernet'),
+(1, 'Przejściówka DisplayPort-HDMI', 'Adaptery', 'szt.', 7, 'F-01-05', 'Pasivna'),
+
+(1, 'Laptop serwisowy', 'Sprzęt', 'szt.', 2, 'F-02-01', 'Do konfiguracji i diagnostyki'),
+(1, 'Stacja dokująca USB-C', 'Sprzęt', 'szt.', 3, 'F-02-02', 'Biurowa'),
+(1, 'Ładowarka USB-C 65W', 'Zasilanie', 'szt.', 5, 'F-02-03', 'Do laptopów'),
+(1, 'Kabel zasilający C13', 'Zasilanie', 'szt.', 10, 'F-02-04', 'Do PC i monitorów'),
+(1, 'Kabel zasilający ósemka C7', 'Zasilanie', 'szt.', 8, 'F-02-05', 'Do drobnego sprzętu'),
+
+(1, 'Dysk HDD 1TB', 'Serwis', 'szt.', 3, 'F-03-01', '3.5 cala'),
+(1, 'Dysk SSD 1TB', 'Serwis', 'szt.', 2, 'F-03-02', 'SATA'),
+(1, 'Pamięć RAM DDR4 8GB', 'Serwis', 'szt.', 6, 'F-03-03', 'DIMM'),
+(1, 'Pamięć RAM DDR4 16GB', 'Serwis', 'szt.', 4, 'F-03-04', 'DIMM'),
+(1, 'Pasta termoprzewodząca', 'Serwis', 'szt.', 5, 'F-03-05', 'Strzykawka'),
+
+(1, 'Sprężone powietrze', 'Serwis', 'szt.', 10, 'G-01-01', 'Do czyszczenia'),
+(1, 'Alkohol izopropylowy 250 ml', 'Serwis', 'szt.', 4, 'G-01-02', 'Do elektroniki'),
+(1, 'Czyścik do ekranów', 'Serwis', 'szt.', 6, 'G-01-03', 'Spray'),
+(1, 'Ściereczka z mikrofibry', 'Serwis', 'szt.', 20, 'G-01-04', 'Do monitorów'),
+(1, 'Zestaw wkrętaków precyzyjnych', 'Narzędzia', 'kpl.', 3, 'G-01-05', 'Serwis komputerowy'),
+
+(1, 'Zaciskarka RJ45', 'Narzędzia', 'szt.', 2, 'G-02-01', 'Do wtyków modularnych'),
+(1, 'Ściągacz izolacji', 'Narzędzia', 'szt.', 3, 'G-02-02', 'Do kabli UTP'),
+(1, 'Tester kabli LAN', 'Narzędzia', 'szt.', 2, 'G-02-03', 'RJ45/RJ11'),
+(1, 'Miernik uniwersalny', 'Narzędzia', 'szt.', 2, 'G-02-04', 'Cyfrowy'),
+(1, 'Latarka serwisowa', 'Narzędzia', 'szt.', 4, 'G-02-05', 'LED'),
+
+(1, 'Uchwyt do monitora VESA', 'Akcesoria', 'szt.', 4, 'G-03-01', 'Biurkowy'),
+(1, 'Hub USB 4-portowy', 'Akcesoria', 'szt.', 6, 'G-03-02', 'USB 3.0'),
+(1, 'Hub USB-C', 'Akcesoria', 'szt.', 5, 'G-03-03', 'Wielofunkcyjny'),
+(1, 'Kabel USB-A do USB-C 1m', 'Okablowanie', 'szt.', 12, 'G-03-04', 'Do ładowania'),
+(1, 'Kabel USB-C do USB-C 1m', 'Okablowanie', 'szt.', 10, 'G-03-05', 'PD'),
+
+(1, 'Kabel USB-A do microUSB 1m', 'Okablowanie', 'szt.', 8, 'H-01-01', 'Do starszych urządzeń'),
+(1, 'Ładowarka sieciowa USB 2A', 'Zasilanie', 'szt.', 7, 'H-01-02', '1 port USB'),
+(1, 'Powerbank 10000 mAh', 'Zasilanie', 'szt.', 3, 'H-01-03', 'Do pracy mobilnej'),
+(1, 'Bateria AAA (opak. 10)', 'Zasilanie', 'opak.', 8, 'H-01-04', 'Alkaliczne'),
+(1, 'Przedłużacz 3m', 'Zasilanie', 'szt.', 5, 'H-01-05', '3 gniazda'),
+
+(1, 'Gniazdo natynkowe RJ45 podwójne', 'Sieć', 'szt.', 6, 'H-02-01', 'Białe'),
+(1, 'Gniazdo natynkowe RJ45 pojedyncze', 'Sieć', 'szt.', 8, 'H-02-02', 'Białe'),
+(1, 'Ramka keystone 1-port', 'Sieć', 'szt.', 10, 'H-02-03', 'Do modułów'),
+(1, 'Ramka keystone 2-port', 'Sieć', 'szt.', 10, 'H-02-04', 'Do modułów'),
+(1, 'Puszka natynkowa do gniazd', 'Sieć', 'szt.', 10, 'H-02-05', 'Plastikowa'),
+
+(1, 'Switch 5p Gigabit', 'Sieć', 'szt.', 4, 'H-03-01', 'Małe stanowiska'),
+(1, 'Router Wi-Fi', 'Sieć', 'szt.', 2, 'H-03-02', 'Testowy'),
+(1, 'Karta sieciowa PCIe 1G', 'Sieć', 'szt.', 4, 'H-03-03', 'Do komputerów'),
+(1, 'Kabel konsolowy USB-RS232', 'Sieć', 'szt.', 2, 'H-03-04', 'Do switchy/routerów'),
+(1, 'Moduł SFP+ 10G MM', 'Sieć', 'szt.', 2, 'H-03-05', 'LC multimode'),
+
+(1, 'Patchcord światłowodowy LC-LC OM3 1m', 'Światłowód', 'szt.', 6, 'I-01-01', 'Aqua'),
+(1, 'Patchcord światłowodowy LC-LC SM 2m', 'Światłowód', 'szt.', 4, 'I-01-02', 'Żółty'),
+(1, 'Pigtail SC OM3', 'Światłowód', 'szt.', 8, 'I-01-03', 'Do przełącznicy'),
+(1, 'Adapter SC duplex', 'Światłowód', 'szt.', 6, 'I-01-04', 'Do patch panelu'),
+(1, 'Przełącznica światłowodowa 1U', 'Światłowód', 'szt.', 2, 'I-01-05', 'Rack 19"'),
+
+(1, 'Półka rack 1U', 'Rack', 'szt.', 3, 'I-02-01', 'Perforowana'),
+(1, 'Wentylator rack', 'Rack', 'szt.', 2, 'I-02-02', 'Do szafy'),
+(1, 'Maskownica rack 1U', 'Rack', 'szt.', 6, 'I-02-03', 'Czarna'),
+(1, 'Patch panel 24p Cat.5e', 'Rack', 'szt.', 3, 'I-02-04', '19"'),
+(1, 'Panel szczotkowy rack 1U', 'Rack', 'szt.', 4, 'I-02-05', 'Przepust kablowy'),
+
+(1, 'Kamera IP', 'Monitoring', 'szt.', 4, 'I-03-01', 'PoE'),
+(1, 'Zasilacz do kamer 12V', 'Monitoring', 'szt.', 4, 'I-03-02', 'Stabilizowany'),
+(1, 'Rejestrator NVR', 'Monitoring', 'szt.', 1, 'I-03-03', 'Testowy'),
+(1, 'Dysk do monitoringu 4TB', 'Monitoring', 'szt.', 2, 'I-03-04', 'Do NVR'),
+(1, 'Uchwyt do kamery', 'Monitoring', 'szt.', 6, 'I-03-05', 'Ścienny'),
+
+(1, 'Etykiety samoprzylepne', 'Biuro', 'opak.', 10, 'J-01-01', 'Do opisu sprzętu');
