@@ -127,6 +127,16 @@ function handlePostActions($database, $sessionUserId)
         handleAddLocationDictionary($database);
         return;
     }
+
+    if (isset($_POST["editDictionary"])) {
+        handleEditDictionary($database, $sessionUserId);
+        return;
+    }
+
+    if (isset($_POST["deleteDictionary"])) {
+        handleDeleteDictionary($database, $sessionUserId);
+        return;
+    }
 }
 
 function addHistory($database, $userId, $productId, $operation, $dataBefore = null, $dataAfter = null)
@@ -1000,6 +1010,18 @@ function handleAddCategoryDictionary($database)
     $created = saveDictionaryValue($database, "slownik_kategorie", $value);
 
     if ($created) {
+        addHistory(
+            $database,
+            getLoggedUserId(),
+            null,
+            "dodanie_słownika",
+            null,
+            [
+                "slownik" => "kategorie",
+                "nazwa" => $value
+            ]
+        );
+
         setFlashMessage("Kategoria została dodana do słownika.", "success");
     } else {
         setFlashMessage("Taka kategoria już istnieje albo nie została dodana.", "warning");
@@ -1022,9 +1044,163 @@ function handleAddLocationDictionary($database)
     $created = saveDictionaryValue($database, "slownik_lokalizacje", $value);
 
     if ($created) {
+        addHistory(
+            $database,
+            getLoggedUserId(),
+            null,
+            "dodanie_słownika",
+            null,
+            [
+                "slownik" => "lokalizacje",
+                "nazwa" => $value
+            ]
+        );
+
         setFlashMessage("Lokalizacja została dodana do słownika.", "success");
     } else {
         setFlashMessage("Taka lokalizacja już istnieje albo nie została dodana.", "warning");
+    }
+
+    redirect("index.php");
+}
+
+function handleEditDictionary($database, $sessionUserId)
+{
+    if (!canManageDictionaries()) {
+        setFlashMessage("Nie masz uprawnień do tej operacji.", "danger");
+        redirect("index.php");
+    }
+
+    $dictionaryType = getPostText("dictionaryType");
+    $dictionaryId = getPostNumber("dictionaryId");
+    $newValue = getPostText("dictionaryValue");
+
+    $config = getDictionaryConfig($dictionaryType);
+
+    if (!$config || $dictionaryId <= 0 || $newValue === "") {
+        setFlashMessage("Nieprawidłowe dane słownika.", "danger");
+        redirect("index.php");
+    }
+
+    $before = getDictionaryRowById($database, $config["table"], $dictionaryId);
+
+    if (!$before || (int) $before["aktywna"] !== 1) {
+        setFlashMessage("Nie znaleziono wpisu słownika.", "danger");
+        redirect("index.php");
+    }
+
+    if (dictionaryValueExists($database, $config["table"], $newValue, $dictionaryId)) {
+        setFlashMessage("Taka wartość już istnieje w tym słowniku.", "danger");
+        redirect("index.php");
+    }
+
+    mysqli_begin_transaction($database);
+
+    try {
+        $oldValue = (string) $before["nazwa"];
+
+        if ($oldValue !== $newValue) {
+            $sqlProducts = "UPDATE magazyn SET {$config["productColumn"]} = ? WHERE {$config["productColumn"]} = ?";
+            $stmtProducts = mysqli_prepare($database, $sqlProducts);
+            mysqli_stmt_bind_param($stmtProducts, "ss", $newValue, $oldValue);
+            mysqli_stmt_execute($stmtProducts);
+            mysqli_stmt_close($stmtProducts);
+        }
+
+        $sql = "UPDATE {$config["table"]} SET nazwa = ? WHERE id = ?";
+        $stmt = mysqli_prepare($database, $sql);
+        mysqli_stmt_bind_param($stmt, "si", $newValue, $dictionaryId);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+
+        $after = getDictionaryRowById($database, $config["table"], $dictionaryId);
+
+        addHistory(
+            $database,
+            $sessionUserId,
+            null,
+            "edycja_słownika",
+            [
+                "slownik" => $dictionaryType,
+                "id" => $before["id"],
+                "nazwa" => $before["nazwa"],
+                "aktywna" => $before["aktywna"]
+            ],
+            [
+                "slownik" => $dictionaryType,
+                "id" => $after["id"],
+                "nazwa" => $after["nazwa"],
+                "aktywna" => $after["aktywna"]
+            ]
+        );
+
+        mysqli_commit($database);
+        setFlashMessage("Wpis słownika został zaktualizowany.", "success");
+    } catch (Throwable $e) {
+        mysqli_rollback($database);
+        setFlashMessage("Błąd edycji słownika: " . $e->getMessage(), "danger");
+    }
+
+    redirect("index.php");
+}
+
+function handleDeleteDictionary($database, $sessionUserId)
+{
+    if (!canManageDictionaries()) {
+        setFlashMessage("Nie masz uprawnień do tej operacji.", "danger");
+        redirect("index.php");
+    }
+
+    $dictionaryType = getPostText("dictionaryType");
+    $dictionaryId = getPostNumber("dictionaryId");
+
+    $config = getDictionaryConfig($dictionaryType);
+
+    if (!$config || $dictionaryId <= 0) {
+        setFlashMessage("Nieprawidłowe dane słownika.", "danger");
+        redirect("index.php");
+    }
+
+    $before = getDictionaryRowById($database, $config["table"], $dictionaryId);
+
+    if (!$before || (int) $before["aktywna"] !== 1) {
+        setFlashMessage("Nie znaleziono wpisu słownika.", "danger");
+        redirect("index.php");
+    }
+
+    if (isDictionaryValueUsedInProducts($database, $config["productColumn"], (string) $before["nazwa"])) {
+        setFlashMessage("Nie można usunąć tej wartości, ponieważ jest używana przez produkty.", "danger");
+        redirect("index.php");
+    }
+
+    mysqli_begin_transaction($database);
+
+    try {
+        $sql = "UPDATE {$config["table"]} SET aktywna = 0 WHERE id = ?";
+        $stmt = mysqli_prepare($database, $sql);
+        mysqli_stmt_bind_param($stmt, "i", $dictionaryId);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+
+        addHistory(
+            $database,
+            $sessionUserId,
+            null,
+            "usunięcie_słownika",
+            [
+                "slownik" => $dictionaryType,
+                "id" => $before["id"],
+                "nazwa" => $before["nazwa"],
+                "aktywna" => $before["aktywna"]
+            ],
+            null
+        );
+
+        mysqli_commit($database);
+        setFlashMessage("Wpis słownika został usunięty.", "success");
+    } catch (Throwable $e) {
+        mysqli_rollback($database);
+        setFlashMessage("Błąd usuwania słownika: " . $e->getMessage(), "danger");
     }
 
     redirect("index.php");
@@ -1161,6 +1337,7 @@ data-user-login="<?= escapeHtml($_SESSION['login'] ?? '') ?>">
         <?php if ($_SESSION["rola"] === "admin"): ?>
           <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="uzytkownicy">Użytkownicy</button>
           <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="historia_operacji">Historia operacji</button>
+          <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="slowniki">Słowniki</button>
         <?php endif; ?>
 
         <a href="logout.php" class="btn btn-dark text-start fw-semibold mt-3">Wyloguj</a>

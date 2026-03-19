@@ -113,6 +113,13 @@ if (!function_exists('canManageUsers')) {
     }
 }
 
+if (!function_exists('canManageDictionaries')) {
+    function canManageDictionaries(): bool
+    {
+        return isAdmin();
+    }
+}
+
 if (!function_exists('canDeactivateTargetUser')) {
     function canDeactivateTargetUser(array $targetUser): bool
     {
@@ -229,6 +236,94 @@ if (!function_exists('canChangeTargetRfid')) {
     }
 }
 
+if (!function_exists('getDictionaryConfig')) {
+    function getDictionaryConfig(string $dictionaryType): ?array
+    {
+        $map = [
+            "kategorie" => [
+                "table" => "slownik_kategorie",
+                "label" => "kategoria",
+                "productColumn" => "kategoria"
+            ],
+            "lokalizacje" => [
+                "table" => "slownik_lokalizacje",
+                "label" => "lokalizacja",
+                "productColumn" => "lokalizacja"
+            ]
+        ];
+
+        return $map[$dictionaryType] ?? null;
+    }
+}
+
+if (!function_exists('getDictionaryRowById')) {
+    function getDictionaryRowById(mysqli $database, string $tableName, int $id): ?array
+    {
+        $allowedTables = ["slownik_kategorie", "slownik_lokalizacje"];
+
+        if (!in_array($tableName, $allowedTables, true) || $id <= 0) {
+            return null;
+        }
+
+        $sql = "SELECT id, nazwa, aktywna, data_utworzenia FROM {$tableName} WHERE id = ? LIMIT 1";
+        $stmt = mysqli_prepare($database, $sql);
+        mysqli_stmt_bind_param($stmt, "i", $id);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $row = mysqli_fetch_assoc($result);
+        mysqli_stmt_close($stmt);
+
+        return $row ?: null;
+    }
+}
+
+if (!function_exists('dictionaryValueExists')) {
+    function dictionaryValueExists(mysqli $database, string $tableName, string $value, int $excludeId = 0): bool
+    {
+        $allowedTables = ["slownik_kategorie", "slownik_lokalizacje"];
+
+        if (!in_array($tableName, $allowedTables, true)) {
+            return false;
+        }
+
+        $value = trim($value);
+        if ($value === "") {
+            return false;
+        }
+
+        $sql = "SELECT id FROM {$tableName} WHERE nazwa = ? AND id <> ? LIMIT 1";
+        $stmt = mysqli_prepare($database, $sql);
+        mysqli_stmt_bind_param($stmt, "si", $value, $excludeId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $exists = (bool) mysqli_fetch_assoc($result);
+        mysqli_stmt_close($stmt);
+
+        return $exists;
+    }
+}
+
+if (!function_exists('isDictionaryValueUsedInProducts')) {
+    function isDictionaryValueUsedInProducts(mysqli $database, string $productColumn, string $value): bool
+    {
+        $allowedColumns = ["kategoria", "lokalizacja"];
+
+        if (!in_array($productColumn, $allowedColumns, true)) {
+            return false;
+        }
+
+        $sql = "SELECT id FROM magazyn WHERE {$productColumn} = ? LIMIT 1";
+        $stmt = mysqli_prepare($database, $sql);
+        mysqli_stmt_bind_param($stmt, "s", $value);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $used = (bool) mysqli_fetch_assoc($result);
+        mysqli_stmt_close($stmt);
+
+        return $used;
+    }
+}
+
 if (!function_exists('saveDictionaryValue')) {
     function saveDictionaryValue(mysqli $database, string $tableName, string $value): bool
     {
@@ -244,15 +339,24 @@ if (!function_exists('saveDictionaryValue')) {
             return false;
         }
 
-        $checkSql = "SELECT id FROM {$tableName} WHERE nazwa = ? LIMIT 1";
-        $checkStmt = mysqli_prepare($database, $checkSql);
-        mysqli_stmt_bind_param($checkStmt, "s", $value);
-        mysqli_stmt_execute($checkStmt);
-        $checkResult = mysqli_stmt_get_result($checkStmt);
-        $exists = (bool) mysqli_fetch_assoc($checkResult);
-        mysqli_stmt_close($checkStmt);
+        $sql = "SELECT id, aktywna FROM {$tableName} WHERE nazwa = ? LIMIT 1";
+        $stmt = mysqli_prepare($database, $sql);
+        mysqli_stmt_bind_param($stmt, "s", $value);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $existing = mysqli_fetch_assoc($result);
+        mysqli_stmt_close($stmt);
 
-        if ($exists) {
+        if ($existing) {
+            if ((int) $existing["aktywna"] === 0) {
+                $updateSql = "UPDATE {$tableName} SET aktywna = 1 WHERE id = ?";
+                $updateStmt = mysqli_prepare($database, $updateSql);
+                mysqli_stmt_bind_param($updateStmt, "i", $existing["id"]);
+                mysqli_stmt_execute($updateStmt);
+                mysqli_stmt_close($updateStmt);
+                return true;
+            }
+
             return false;
         }
 

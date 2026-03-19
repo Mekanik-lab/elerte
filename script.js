@@ -251,7 +251,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function buildFilterParams(sectionName, page = 1) {
-    const savedFilter = getSectionFilter(sectionName);
+    let savedFilter = null;
+
+    if (sectionName === "slowniki") {
+      savedFilter = {
+        ...(getSectionFilter("slowniki_kategorie") || {}),
+        ...(getSectionFilter("slowniki_lokalizacje") || {}),
+        table: "slowniki",
+        page: String(page)
+      };
+    } else {
+      savedFilter = getSectionFilter(sectionName);
+    }
 
     if (!savedFilter) {
       return null;
@@ -274,6 +285,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (sectionName === "magazyn" && !params.get("table")) {
       params.set("table", "magazyn");
+    }
+
+    if (sectionName === "slowniki" && !params.get("table")) {
+      params.set("table", "slowniki");
     }
 
     return params;
@@ -468,6 +483,18 @@ document.addEventListener("DOMContentLoaded", () => {
         loadCurrentSectionWithRememberedFilter(1);
         break;
 
+      case "slowniki":
+        setHeader(
+          "Słowniki",
+          `
+            <button class="btn btn-light" data-form="addCategoryDictionary">Dodaj kategorię</button>
+            <button class="btn btn-light" data-form="addLocationDictionary">Dodaj lokalizację</button>
+          `
+        );
+        bindHeaderButtons();
+        loadCurrentSectionWithRememberedFilter(1);
+        break;
+
       default:
         currentSection = "magazyn";
         localStorage.setItem(lastSectionStorageKey, currentSection);
@@ -586,6 +613,8 @@ document.addEventListener("DOMContentLoaded", () => {
     bindRowButtons();
     bindInventoryRows();
     bindPaginationButtons();
+    bindDictionaryButtons();
+    bindDictionaryFilterButtons();
 
     if (currentSection === "historia_operacji") {
       showJSONInHistory();
@@ -670,17 +699,6 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
     }
 
-    if (userRole === "admin") {
-      html += `
-        <button class="btn btn-dark fw-semibold" data-form="addCategoryDictionary">
-          Dodaj kategorię
-        </button>
-        <button class="btn btn-dark fw-semibold" data-form="addLocationDictionary">
-          Dodaj lokalizację
-        </button>
-      `;
-    }
-
     html += `</div>`;
 
     data.innerHTML = html;
@@ -695,8 +713,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     rows.forEach(row => {
       const cells = Array.from(row.querySelectorAll("td"));
-      const beforeCell = cells[7];
-      const afterCell = cells[8];
+      const beforeCell = cells[8];
+      const afterCell = cells[9];
 
       if (!beforeCell || !afterCell) return;
 
@@ -856,6 +874,66 @@ document.addEventListener("DOMContentLoaded", () => {
         bindHeaderButtons();
         bindBackButton();
         loadCurrentSectionWithRememberedFilter(1);
+      });
+    });
+  }
+
+  function bindDictionaryButtons() {
+    document.querySelectorAll("tr[data-dictionary-type]").forEach(row => {
+      const id = row.dataset.id;
+      const dictionaryType = row.dataset.dictionaryType;
+      const cells = Array.from(row.querySelectorAll("td")).map(td => td.textContent.trim());
+
+      row.querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", e => {
+          e.stopPropagation();
+
+          if (btn.classList.contains("dictionaryEditBtn")) {
+            const currentValue = cells[1] || "";
+
+            showForm(
+              dictionaryType === "kategorie" ? "Edytuj kategorię" : "Edytuj lokalizację",
+              `
+              <form method="POST" action="index.php" class="d-grid gap-2">
+                <input type="hidden" name="editDictionary" value="1">
+                <input type="hidden" name="dictionaryType" value="${escapeHtml(dictionaryType)}">
+                <input type="hidden" name="dictionaryId" value="${escapeHtml(id)}">
+                <div>
+                  <label class="form-label">Nowa nazwa</label>
+                  <input type="text" name="dictionaryValue" class="form-control" value="${escapeHtml(currentValue)}" required>
+                </div>
+                <button type="submit" class="btn btn-warning">Zapisz</button>
+              </form>
+              `
+            );
+          }
+
+          if (btn.classList.contains("dictionaryDeleteBtn")) {
+            showForm(
+              dictionaryType === "kategorie" ? "Usuń kategorię" : "Usuń lokalizację",
+              `
+              <form method="POST" action="index.php" class="d-grid gap-2">
+                <input type="hidden" name="deleteDictionary" value="1">
+                <input type="hidden" name="dictionaryType" value="${escapeHtml(dictionaryType)}">
+                <input type="hidden" name="dictionaryId" value="${escapeHtml(id)}">
+                <p>Czy na pewno chcesz usunąć tę pozycję słownika?</p>
+                <button type="submit" class="btn btn-danger">Usuń</button>
+              </form>
+              `
+            );
+          }
+        });
+      });
+    });
+  }
+
+  function bindDictionaryFilterButtons() {
+    document.querySelectorAll(".dictionary-filter-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const formName = btn.dataset.form;
+        if (formName) {
+          renderForm(formName);
+        }
       });
     });
   }
@@ -1091,6 +1169,11 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
+        if (sectionName === "slowniki_kategorie" || sectionName === "slowniki_lokalizacje" || sectionName === "slowniki") {
+          loadTable("slowniki", 1);
+          return;
+        }
+
         if (currentSection === sectionName) {
           loadTable(sectionName, 1);
         } else {
@@ -1119,7 +1202,19 @@ document.addEventListener("DOMContentLoaded", () => {
       formData.append("table", "magazyn");
     }
 
-    saveSectionFilter(tableName, formData);
+    if (tableName === "slowniki") {
+      const dictionaryFilterType = formData.get("dictionaryFilterType") || "";
+
+      if (dictionaryFilterType === "kategorie") {
+        saveSectionFilter("slowniki_kategorie", formData);
+      } else if (dictionaryFilterType === "lokalizacje") {
+        saveSectionFilter("slowniki_lokalizacje", formData);
+      } else {
+        saveSectionFilter("slowniki", formData);
+      }
+    } else {
+      saveSectionFilter(tableName, formData);
+    }
 
     try {
       const res = await fetch("getTable.php", {
@@ -1172,8 +1267,17 @@ document.addEventListener("DOMContentLoaded", () => {
               </select>
             </div>
             <div>
-              <label class="form-label">Nazwa produktu</label>
-              <select name="productName" id="historyProductNameSelect" class="form-select">
+              <label class="form-label">Typ obiektu</label>
+              <select name="objectType" class="form-select">
+                <option value="">-- wszystkie --</option>
+                <option value="produkt" ${getFilterValue("historia_operacji", "objectType") === "produkt" ? "selected" : ""}>Produkt</option>
+                <option value="kategorie" ${getFilterValue("historia_operacji", "objectType") === "kategorie" ? "selected" : ""}>Kategorie</option>
+                <option value="lokalizacje" ${getFilterValue("historia_operacji", "objectType") === "lokalizacje" ? "selected" : ""}>Lokalizacje</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Nazwa obiektu</label>
+              <select name="objectName" id="historyObjectNameSelect" class="form-select">
                 <option value="">-- wszystkie --</option>
               </select>
             </div>
@@ -1186,6 +1290,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 <option value="usunięcie" ${getFilterValue("historia_operacji", "operationName") === "usunięcie" ? "selected" : ""}>Usunięcie</option>
                 <option value="wydanie" ${getFilterValue("historia_operacji", "operationName") === "wydanie" ? "selected" : ""}>Wydanie</option>
                 <option value="inwentaryzacja" ${getFilterValue("historia_operacji", "operationName") === "inwentaryzacja" ? "selected" : ""}>Inwentaryzacja</option>
+                <option value="dodanie_słownika" ${getFilterValue("historia_operacji", "operationName") === "dodanie_słownika" ? "selected" : ""}>Dodanie słownika</option>
+                <option value="edycja_słownika" ${getFilterValue("historia_operacji", "operationName") === "edycja_słownika" ? "selected" : ""}>Edycja słownika</option>
+                <option value="usunięcie_słownika" ${getFilterValue("historia_operacji", "operationName") === "usunięcie_słownika" ? "selected" : ""}>Usunięcie słownika</option>
               </select>
             </div>
             <div>
@@ -1199,7 +1306,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 <option value="Login" ${getFilterValue("historia_operacji", "sortColumn") === "Login" ? "selected" : ""}>Login</option>
                 <option value="Id produktu" ${getFilterValue("historia_operacji", "sortColumn") === "Id produktu" ? "selected" : ""}>Id produktu</option>
                 <option value="Imię i nazwisko" ${getFilterValue("historia_operacji", "sortColumn") === "Imię i nazwisko" ? "selected" : ""}>Imię i nazwisko</option>
-                <option value="Nazwa produktu" ${getFilterValue("historia_operacji", "sortColumn") === "Nazwa produktu" ? "selected" : ""}>Nazwa produktu</option>
+                <option value="Typ obiektu" ${getFilterValue("historia_operacji", "sortColumn") === "Typ obiektu" ? "selected" : ""}>Typ obiektu</option>
+                <option value="Nazwa obiektu" ${getFilterValue("historia_operacji", "sortColumn") === "Nazwa obiektu" ? "selected" : ""}>Nazwa obiektu</option>
                 <option value="Operacja" ${getFilterValue("historia_operacji", "sortColumn") === "Operacja" ? "selected" : ""}>Operacja</option>
                 <option value="Data operacji" ${getFilterValue("historia_operacji", "sortColumn") === "Data operacji" ? "selected" : ""}>Data operacji</option>
               </select>
@@ -1222,7 +1330,7 @@ document.addEventListener("DOMContentLoaded", () => {
         fillSelects([
           ["historyLoginSelect", "uzytkownicy_login", getFilterValue("historia_operacji", "login")],
           ["historyFullNameSelect", "uzytkownicy_fullname", getFilterValue("historia_operacji", "fullName")],
-          ["historyProductNameSelect", "historia_nazwa_produktu", getFilterValue("historia_operacji", "productName")]
+          ["historyObjectNameSelect", "historia_nazwa_produktu", getFilterValue("historia_operacji", "objectName")]
         ]);
         break;
 
@@ -1577,6 +1685,72 @@ document.addEventListener("DOMContentLoaded", () => {
           ["magazineCategorySelect", "kategorie", getFilterValue("magazyn", "productCategory")],
           ["magazineLocationSelect", "lokalizacje", getFilterValue("magazyn", "productAdress")]
         ]);
+        break;
+
+      case "dictionaryCategoriesFilter":
+        showForm(
+          "Filtruj kategorie",
+          `
+          <form method="POST" action="getTable.php" data-filter="1" class="d-grid gap-2">
+            <input type="hidden" name="table" value="slowniki">
+            <input type="hidden" name="dictionaryFilterType" value="kategorie">
+            <input type="hidden" name="page" value="1">
+
+            <div>
+              <label class="form-label">Id</label>
+              <input type="number" name="categoryId" class="form-control" value="${escapeHtml(getFilterValue("slowniki_kategorie", "categoryId"))}">
+            </div>
+
+            <div>
+              <label class="form-label">Nazwa</label>
+              <input type="text" name="categoryName" class="form-control" value="${escapeHtml(getFilterValue("slowniki_kategorie", "categoryName"))}">
+            </div>
+
+            <div>
+              <label class="form-label">Data utworzenia</label>
+              <input type="date" name="categoryCreatedDate" class="form-control" value="${escapeHtml(getFilterValue("slowniki_kategorie", "categoryCreatedDate"))}">
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-warning mt-2">Filtruj</button>
+              <button type="button" class="btn btn-secondary mt-2" data-clear-filter="slowniki_kategorie">Wyczyść filtry</button>
+            </div>
+          </form>
+          `
+        );
+        break;
+
+      case "dictionaryLocationsFilter":
+        showForm(
+          "Filtruj lokalizacje",
+          `
+          <form method="POST" action="getTable.php" data-filter="1" class="d-grid gap-2">
+            <input type="hidden" name="table" value="slowniki">
+            <input type="hidden" name="dictionaryFilterType" value="lokalizacje">
+            <input type="hidden" name="page" value="1">
+
+            <div>
+              <label class="form-label">Id</label>
+              <input type="number" name="locationId" class="form-control" value="${escapeHtml(getFilterValue("slowniki_lokalizacje", "locationId"))}">
+            </div>
+
+            <div>
+              <label class="form-label">Nazwa</label>
+              <input type="text" name="locationName" class="form-control" value="${escapeHtml(getFilterValue("slowniki_lokalizacje", "locationName"))}">
+            </div>
+
+            <div>
+              <label class="form-label">Data utworzenia</label>
+              <input type="date" name="locationCreatedDate" class="form-control" value="${escapeHtml(getFilterValue("slowniki_lokalizacje", "locationCreatedDate"))}">
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-warning mt-2">Filtruj</button>
+              <button type="button" class="btn btn-secondary mt-2" data-clear-filter="slowniki_lokalizacje">Wyczyść filtry</button>
+            </div>
+          </form>
+          `
+        );
         break;
 
       case "magazineAddProduct":

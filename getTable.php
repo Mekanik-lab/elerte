@@ -73,7 +73,8 @@ function getAllowedTables()
         "inwentaryzacje",
         "inwentaryzacja_pozycja",
         "uzytkownicy",
-        "historia_operacji"
+        "historia_operacji",
+        "slowniki"
     ];
 }
 
@@ -85,7 +86,8 @@ function getTablePermissions()
         "inwentaryzacje" => ["admin", "user"],
         "inwentaryzacja_pozycja" => ["admin", "user"],
         "uzytkownicy" => ["admin"],
-        "historia_operacji" => ["admin"]
+        "historia_operacji" => ["admin"],
+        "slowniki" => ["admin"]
     ];
 }
 
@@ -390,7 +392,7 @@ function savePostedFiltersToSession($table)
         ],
         "historia_operacji" => [
             "table", "page", "isFilterRequest",
-            "login", "fullName", "productName", "operationName",
+            "login", "fullName", "objectName", "objectType", "operationName",
             "operationDate", "sortColumn", "sortOrder"
         ],
         "wydania" => [
@@ -411,6 +413,12 @@ function savePostedFiltersToSession($table)
             "table", "page", "isFilterRequest",
             "inventoryId", "productName", "stateFrom", "stateTo",
             "differenceFrom", "differenceTo", "sortColumn", "sortOrder"
+        ],
+        "slowniki" => [
+            "table", "page", "isFilterRequest",
+            "dictionaryFilterType",
+            "categoryId", "categoryName", "categoryCreatedDate",
+            "locationId", "locationName", "locationCreatedDate"
         ]
     ];
 
@@ -461,6 +469,11 @@ function handleTableRequest($database, $table, $page, $perPage, $offset)
 {
     if (shouldClearFiltersRequest()) {
         clearSavedFiltersFromSession($table);
+
+        if ($table === "slowniki") {
+            handleDictionariesView($database);
+        }
+
         handleDefaultTable($database, $table, $page, $perPage, $offset);
     }
 
@@ -470,6 +483,10 @@ function handleTableRequest($database, $table, $page, $perPage, $offset)
 
     if (!isPostRequest()) {
         applySavedFiltersToPost($table);
+    }
+
+    if ($table === "slowniki") {
+        handleDictionariesView($database);
     }
 
     if ($table === "magazyn" && hasMagazineFilters()) {
@@ -560,7 +577,8 @@ function hasHistoryFilters(): bool
     return hasAnyPostedFilterValue([
         "login",
         "fullName",
-        "productName",
+        "objectName",
+        "objectType",
         "operationName",
         "operationDate",
         "sortColumn",
@@ -743,7 +761,8 @@ function getHistorySortColumns()
         "Login" => "uzytkownicy.login",
         "Id produktu" => "historia_operacji.id_produktu",
         "Imię i nazwisko" => "uzytkownicy.nazwisko",
-        "Nazwa produktu" => "nazwa_sort",
+        "Typ obiektu" => "typ_obiektu_sort",
+        "Nazwa obiektu" => "nazwa_sort",
         "Operacja" => "historia_operacji.operacja",
         "Data operacji" => "historia_operacji.data_operacji"
     ];
@@ -767,14 +786,28 @@ function buildHistoryFilterData()
         $types .= "s";
     }
 
-    if (getPostText("productName") !== "") {
+    if (getPostText("objectName") !== "") {
         $where[] = "COALESCE(
             magazyn.nazwa,
             JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_przed, '$.nazwa')),
             JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_po, '$.nazwa'))
         ) LIKE ?";
-        $params[] = "%" . getPostText("productName") . "%";
+        $params[] = "%" . getPostText("objectName") . "%";
         $types .= "s";
+    }
+
+    if (getPostText("objectType") !== "") {
+        if (getPostText("objectType") === "produkt") {
+            $where[] = "historia_operacji.operacja NOT IN ('dodanie_słownika', 'edycja_słownika', 'usunięcie_słownika')";
+        } else {
+            $where[] = "COALESCE(
+                JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_po, '$.slownik')),
+                JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_przed, '$.slownik')),
+                'produkt'
+            ) = ?";
+            $params[] = getPostText("objectType");
+            $types .= "s";
+        }
     }
 
     if (getPostText("operationName") !== "") {
@@ -832,15 +865,33 @@ function handleHistoryFilter($database, $page, $perPage, $offset)
             uzytkownicy.login AS 'Login',
             historia_operacji.id_produktu AS 'Id produktu',
             CONCAT(uzytkownicy.imie, ' ', uzytkownicy.nazwisko) AS 'Imię i nazwisko',
+            CASE
+                WHEN historia_operacji.operacja IN ('dodanie_słownika', 'edycja_słownika', 'usunięcie_słownika') THEN
+                    COALESCE(
+                        JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_po, '$.slownik')),
+                        JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_przed, '$.slownik')),
+                        '-'
+                    )
+                ELSE 'produkt'
+            END AS 'Typ obiektu',
             COALESCE(
                 magazyn.nazwa,
                 JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_przed, '$.nazwa')),
                 JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_po, '$.nazwa'))
-            ) AS 'Nazwa produktu',
+            ) AS 'Nazwa obiektu',
             historia_operacji.operacja AS 'Operacja',
             historia_operacji.data_operacji AS 'Data operacji',
             historia_operacji.dane_przed AS 'Dane przed operacją',
             historia_operacji.dane_po AS 'Dane po operacji',
+            CASE
+                WHEN historia_operacji.operacja IN ('dodanie_słownika', 'edycja_słownika', 'usunięcie_słownika') THEN
+                    COALESCE(
+                        JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_po, '$.slownik')),
+                        JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_przed, '$.slownik')),
+                        '-'
+                    )
+                ELSE 'produkt'
+            END AS typ_obiektu_sort,
             COALESCE(
                 magazyn.nazwa,
                 JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_przed, '$.nazwa')),
@@ -872,7 +923,7 @@ function handleHistoryFilter($database, $page, $perPage, $offset)
 
     $cleanRows = [];
     while ($row = mysqli_fetch_assoc($resultWithSort)) {
-        unset($row["nazwa_sort"]);
+        unset($row["nazwa_sort"], $row["typ_obiektu_sort"]);
         $cleanRows[] = $row;
     }
 
@@ -1418,6 +1469,140 @@ function handleInventoryPositionsDetails($database, $page, $perPage, $offset)
     renderAndExit($database, $stmt, $result, "inwentaryzacja_pozycja", $page, $totalPages);
 }
 
+function buildCategoryFilterData()
+{
+    $where = ["aktywna = 1"];
+    $params = [];
+    $types = "";
+
+    if (isset($_POST["categoryId"]) && $_POST["categoryId"] !== "") {
+        $where[] = "id = ?";
+        $params[] = getPostNumber("categoryId");
+        $types .= "i";
+    }
+
+    if (getPostText("categoryName") !== "") {
+        $where[] = "nazwa LIKE ?";
+        $params[] = "%" . getPostText("categoryName") . "%";
+        $types .= "s";
+    }
+
+    if (getPostText("categoryCreatedDate") !== "") {
+        $where[] = "DATE(data_utworzenia) = ?";
+        $params[] = getPostText("categoryCreatedDate");
+        $types .= "s";
+    }
+
+    return [
+        "whereSql" => "WHERE " . implode(" AND ", $where),
+        "params" => $params,
+        "types" => $types
+    ];
+}
+
+function buildLocationFilterData()
+{
+    $where = ["aktywna = 1"];
+    $params = [];
+    $types = "";
+
+    if (isset($_POST["locationId"]) && $_POST["locationId"] !== "") {
+        $where[] = "id = ?";
+        $params[] = getPostNumber("locationId");
+        $types .= "i";
+    }
+
+    if (getPostText("locationName") !== "") {
+        $where[] = "nazwa LIKE ?";
+        $params[] = "%" . getPostText("locationName") . "%";
+        $types .= "s";
+    }
+
+    if (getPostText("locationCreatedDate") !== "") {
+        $where[] = "DATE(data_utworzenia) = ?";
+        $params[] = getPostText("locationCreatedDate");
+        $types .= "s";
+    }
+
+    return [
+        "whereSql" => "WHERE " . implode(" AND ", $where),
+        "params" => $params,
+        "types" => $types
+    ];
+}
+
+function renderDictionaryTable($database, string $dictionaryType, string $title, string $tableName, array $filterData, string $filterFormName)
+{
+    $sql = "SELECT id, nazwa, data_utworzenia FROM {$tableName} {$filterData["whereSql"]} ORDER BY nazwa ASC";
+
+    if ($filterData["types"] !== "") {
+        [$stmt, $result] = fetchPreparedResult(
+            $database,
+            $sql,
+            $filterData["types"],
+            $filterData["params"],
+            "Błąd prepare słownika {$dictionaryType}",
+            "Błąd execute słownika {$dictionaryType}"
+        );
+    } else {
+        $result = mysqli_query($database, $sql);
+
+        if (!$result) {
+            http_response_code(500);
+            exit("Błąd pobierania słownika");
+        }
+
+        $stmt = null;
+    }
+
+    echo '<div class="mb-4">';
+    echo '<div class="d-flex justify-content-between align-items-center mb-2">';
+    echo '<h5 class="fw-bold mb-0">' . escapeHtml($title) . '</h5>';
+    echo '<button class="btn btn-outline-secondary btn-sm dictionary-filter-btn" data-form="' . escapeHtml($filterFormName) . '">Filtruj</button>';
+    echo '</div>';
+
+    echo '<div class="table-responsive">';
+    echo '<table class="table table-striped table-hover align-middle table-sm mb-0">';
+    echo '<thead><tr>';
+    echo "<th class='text-center'>Id</th>";
+    echo "<th class='text-center'>Nazwa</th>";
+    echo "<th class='text-center'>Data utworzenia</th>";
+    echo "<th class='text-center'>Akcje</th>";
+    echo '</tr></thead><tbody>';
+
+    while ($row = mysqli_fetch_assoc($result)) {
+        echo "<tr data-id='" . escapeHtml((string) $row["id"]) . "' data-dictionary-type='" . escapeHtml($dictionaryType) . "'>";
+        echo "<td class='text-center'>" . escapeHtml($row["id"]) . "</td>";
+        echo "<td class='text-center'>" . escapeHtml($row["nazwa"]) . "</td>";
+        echo "<td class='text-center'>" . escapeHtml($row["data_utworzenia"]) . "</td>";
+        echo "<td class='text-center'>";
+        echo "<button class='dictionaryEditBtn btn btn-warning btn-sm me-1'>Edytuj</button>";
+        echo "<button class='dictionaryDeleteBtn btn btn-danger btn-sm'>Usuń</button>";
+        echo "</td>";
+        echo "</tr>";
+    }
+
+    echo '</tbody></table></div></div>';
+
+    if ($stmt) {
+        mysqli_stmt_close($stmt);
+    }
+}
+
+function handleDictionariesView($database)
+{
+    $categoryFilterData = buildCategoryFilterData();
+    $locationFilterData = buildLocationFilterData();
+
+    echo '<div class="d-grid gap-4">';
+    renderDictionaryTable($database, "kategorie", "Kategorie", "slownik_kategorie", $categoryFilterData, "dictionaryCategoriesFilter");
+    renderDictionaryTable($database, "lokalizacje", "Lokalizacje", "slownik_lokalizacje", $locationFilterData, "dictionaryLocationsFilter");
+    echo '</div>';
+
+    mysqli_close($database);
+    exit;
+}
+
 function getDefaultTableConfig($table)
 {
     $configs = [
@@ -1526,11 +1711,20 @@ function getDefaultTableConfig($table)
                     uzytkownicy.login AS 'Login',
                     historia_operacji.id_produktu AS 'Id produktu',
                     CONCAT(uzytkownicy.imie, ' ', uzytkownicy.nazwisko) AS 'Imię i nazwisko',
+                    CASE
+                        WHEN historia_operacji.operacja IN ('dodanie_słownika', 'edycja_słownika', 'usunięcie_słownika') THEN
+                            COALESCE(
+                                JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_po, '$.slownik')),
+                                JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_przed, '$.slownik')),
+                                '-'
+                            )
+                        ELSE 'produkt'
+                    END AS 'Typ obiektu',
                     COALESCE(
                         magazyn.nazwa,
                         JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_przed, '$.nazwa')),
                         JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_po, '$.nazwa'))
-                    ) AS 'Nazwa produktu',
+                    ) AS 'Nazwa obiektu',
                     historia_operacji.operacja AS 'Operacja',
                     historia_operacji.data_operacji AS 'Data operacji',
                     historia_operacji.dane_przed AS 'Dane przed operacją',
