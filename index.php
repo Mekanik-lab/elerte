@@ -1186,7 +1186,7 @@ function handleDeleteDictionary($database, $sessionUserId)
             $database,
             $sessionUserId,
             null,
-            "usunięcie_ze_słownika",
+            "usunięcie_z_słownika",
             [
                 "slownik" => $dictionaryType,
                 "id" => $before["id"],
