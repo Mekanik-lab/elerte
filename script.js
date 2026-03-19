@@ -1290,9 +1290,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 <option value="usunięcie" ${getFilterValue("historia_operacji", "operationName") === "usunięcie" ? "selected" : ""}>Usunięcie</option>
                 <option value="wydanie" ${getFilterValue("historia_operacji", "operationName") === "wydanie" ? "selected" : ""}>Wydanie</option>
                 <option value="inwentaryzacja" ${getFilterValue("historia_operacji", "operationName") === "inwentaryzacja" ? "selected" : ""}>Inwentaryzacja</option>
-                <option value="dodanie_słownika" ${getFilterValue("historia_operacji", "operationName") === "dodanie_słownika" ? "selected" : ""}>Dodanie słownika</option>
+                <option value="dodanie_do_słownika" ${getFilterValue("historia_operacji", "operationName") === "dodanie_do_słownika" ? "selected" : ""}>Dodanie do słownika</option>
                 <option value="edycja_słownika" ${getFilterValue("historia_operacji", "operationName") === "edycja_słownika" ? "selected" : ""}>Edycja słownika</option>
-                <option value="usunięcie_słownika" ${getFilterValue("historia_operacji", "operationName") === "usunięcie_słownika" ? "selected" : ""}>Usunięcie słownika</option>
+                <option value="usunięcie_z_słownika" ${getFilterValue("historia_operacji", "operationName") === "usunięcie_z_słownika" ? "selected" : ""}>Usunięcie z słownika</option>
               </select>
             </div>
             <div>
