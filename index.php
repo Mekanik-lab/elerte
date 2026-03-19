@@ -1014,7 +1014,7 @@ function handleAddCategoryDictionary($database)
             $database,
             getLoggedUserId(),
             null,
-            "dodanie_słownika",
+            "dodanie_do_słownika",
             null,
             [
                 "slownik" => "kategorie",
@@ -1048,7 +1048,7 @@ function handleAddLocationDictionary($database)
             $database,
             getLoggedUserId(),
             null,
-            "dodanie_słownika",
+            "dodanie_do_słownika",
             null,
             [
                 "slownik" => "lokalizacje",
@@ -1186,7 +1186,7 @@ function handleDeleteDictionary($database, $sessionUserId)
             $database,
             $sessionUserId,
             null,
-            "usunięcie_słownika",
+            "usunięcie_ze_słownika",
             [
                 "slownik" => $dictionaryType,
                 "id" => $before["id"],

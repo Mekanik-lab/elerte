@@ -798,7 +798,7 @@ function buildHistoryFilterData()
 
     if (getPostText("objectType") !== "") {
         if (getPostText("objectType") === "produkt") {
-            $where[] = "historia_operacji.operacja NOT IN ('dodanie_słownika', 'edycja_słownika', 'usunięcie_słownika')";
+            $where[] = "historia_operacji.operacja NOT IN ('dodanie_do_słownika', 'edycja_słownika', 'usunięcie_z_słownika')";
         } else {
             $where[] = "COALESCE(
                 JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_po, '$.slownik')),
@@ -866,7 +866,7 @@ function handleHistoryFilter($database, $page, $perPage, $offset)
             historia_operacji.id_produktu AS 'Id produktu',
             CONCAT(uzytkownicy.imie, ' ', uzytkownicy.nazwisko) AS 'Imię i nazwisko',
             CASE
-                WHEN historia_operacji.operacja IN ('dodanie_słownika', 'edycja_słownika', 'usunięcie_słownika') THEN
+                WHEN historia_operacji.operacja IN ('dodanie_do_słownika', 'edycja_słownika', 'usunięcie_z_słownika') THEN
                     COALESCE(
                         JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_po, '$.slownik')),
                         JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_przed, '$.slownik')),
@@ -884,7 +884,7 @@ function handleHistoryFilter($database, $page, $perPage, $offset)
             historia_operacji.dane_przed AS 'Dane przed operacją',
             historia_operacji.dane_po AS 'Dane po operacji',
             CASE
-                WHEN historia_operacji.operacja IN ('dodanie_słownika', 'edycja_słownika', 'usunięcie_słownika') THEN
+                WHEN historia_operacji.operacja IN ('dodanie_do_słownika', 'edycja_słownika', 'usunięcie_z_słownika') THEN
                     COALESCE(
                         JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_po, '$.slownik')),
                         JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_przed, '$.slownik')),
@@ -1712,7 +1712,7 @@ function getDefaultTableConfig($table)
                     historia_operacji.id_produktu AS 'Id produktu',
                     CONCAT(uzytkownicy.imie, ' ', uzytkownicy.nazwisko) AS 'Imię i nazwisko',
                     CASE
-                        WHEN historia_operacji.operacja IN ('dodanie_słownika', 'edycja_słownika', 'usunięcie_słownika') THEN
+                        WHEN historia_operacji.operacja IN ('dodanie_do_słownika', 'edycja_słownika', 'usunięcie_z_słownika') THEN
                             COALESCE(
                                 JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_po, '$.slownik')),
                                 JSON_UNQUOTE(JSON_EXTRACT(historia_operacji.dane_przed, '$.slownik')),
