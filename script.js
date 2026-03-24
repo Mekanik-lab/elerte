@@ -1958,7 +1958,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <div>
               <label class="form-label">Lokalizacja</label>
-              <input type="text" name="productAdress" list="selectProductLocation" class="form-control" data-restrict-to-list="1" required>
+              <input type="text" name="productAdress" list="selectProductLocation" class="form-control" data-restrict-to-list="1">
               <datalist id="selectProductLocation"></datalist>
               <div class="invalid-feedback">Wybierz wartość z listy.</div>
             </div>
