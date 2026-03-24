@@ -191,6 +191,19 @@ function getUserById($database, $userId)
     return $user;
 }
 
+function getDictionaryRowByName($database, $table, $name)
+{
+    $sql = "SELECT * FROM {$table} WHERE nazwa = ? LIMIT 1";
+    $stmt = mysqli_prepare($database, $sql);
+    mysqli_stmt_bind_param($stmt, "s", $name);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $row = mysqli_fetch_assoc($result);
+    mysqli_stmt_close($stmt);
+
+    return $row;
+}
+
 function rfidExistsForAnotherUser($database, $rfid, $excludedUserId = 0)
 {
     if ($rfid === "") {
@@ -1010,14 +1023,17 @@ function handleAddCategoryDictionary($database)
     $created = saveDictionaryValue($database, "slownik_kategorie", $value);
 
     if ($created) {
+        $row = getDictionaryRowByName($database, "slownik_kategorie", $value);
+
         addHistory(
             $database,
             getLoggedUserId(),
-            null,
+            $row ? (int) $row["id"] : null,
             "dodanie_do_słownika",
             null,
             [
                 "slownik" => "kategorie",
+                "id" => $row["id"] ?? null,
                 "nazwa" => $value
             ]
         );
@@ -1044,14 +1060,17 @@ function handleAddLocationDictionary($database)
     $created = saveDictionaryValue($database, "slownik_lokalizacje", $value);
 
     if ($created) {
+        $row = getDictionaryRowByName($database, "slownik_lokalizacje", $value);
+
         addHistory(
             $database,
             getLoggedUserId(),
-            null,
+            $row ? (int) $row["id"] : null,
             "dodanie_do_słownika",
             null,
             [
                 "slownik" => "lokalizacje",
+                "id" => $row["id"] ?? null,
                 "nazwa" => $value
             ]
         );
@@ -1118,7 +1137,7 @@ function handleEditDictionary($database, $sessionUserId)
         addHistory(
             $database,
             $sessionUserId,
-            null,
+            (int) $dictionaryId,
             "edycja_słownika",
             [
                 "slownik" => $dictionaryType,
@@ -1185,7 +1204,7 @@ function handleDeleteDictionary($database, $sessionUserId)
         addHistory(
             $database,
             $sessionUserId,
-            null,
+            (int) $dictionaryId,
             "usunięcie_z_słownika",
             [
                 "slownik" => $dictionaryType,
@@ -1338,7 +1357,7 @@ data-user-login="<?= escapeHtml($_SESSION['login'] ?? '') ?>">
           <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="historia_operacji">Historia operacji</button>
           <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="slowniki">Słowniki</button>
         <?php endif; ?>
-                <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="ustawienia_konta">Ustawienia konta</button>
+        <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="ustawienia_konta">Ustawienia konta</button>
         <a href="logout.php" class="btn btn-dark text-start fw-semibold mt-3">Wyloguj</a>
       </div>
     </aside>
