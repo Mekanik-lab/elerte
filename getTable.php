@@ -811,8 +811,8 @@ function buildHistoryFilterData()
     }
 
     if (getPostText("operationName") !== "") {
-        $where[] = "historia_operacji.operacja LIKE ?";
-        $params[] = "%" . getPostText("operationName") . "%";
+        $where[] = "historia_operacji.operacja = ?";
+        $params[] = getPostText("operationName");
         $types .= "s";
     }
 
@@ -1533,7 +1533,7 @@ function buildLocationFilterData()
 
 function renderDictionaryTable($database, string $dictionaryType, string $title, string $tableName, array $filterData, string $filterFormName)
 {
-    $sql = "SELECT id, nazwa, data_utworzenia FROM {$tableName} {$filterData["whereSql"]} ORDER BY nazwa ASC";
+    $sql = "SELECT id, nazwa, data_utworzenia FROM {$tableName} {$filterData["whereSql"]} ORDER BY id ASC";
 
     if ($filterData["types"] !== "") {
         [$stmt, $result] = fetchPreparedResult(

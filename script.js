@@ -9,7 +9,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const welcomeName = (body.dataset.userFullname || "").trim();
   const userLogin = (body.dataset.userLogin || "").trim();
-  const userRole = (body.dataset.userRole || "").trim();
 
   const userStorageSuffix = userLogin || "guest";
 
@@ -812,6 +811,83 @@ document.addEventListener("DOMContentLoaded", () => {
     return String(val);
   }
 
+  function getDatalistValues(listId) {
+    const datalist = document.getElementById(listId);
+    if (!datalist) return [];
+
+    return Array.from(datalist.querySelectorAll("option"))
+      .map(option => String(option.value || "").trim())
+      .filter(Boolean);
+  }
+
+  function isRestrictedDatalistInput(input) {
+    return input.matches("input[list][data-restrict-to-list='1']");
+  }
+
+  function isValueFromDatalist(input) {
+    const listId = input.getAttribute("list");
+    if (!listId) return true;
+
+    const currentValue = String(input.value || "").trim();
+    if (!currentValue) return true;
+
+    const allowedValues = getDatalistValues(listId);
+    return allowedValues.includes(currentValue);
+  }
+
+  function validateDatalistInput(input, { clearInvalid = false } = {}) {
+    if (!input || !isRestrictedDatalistInput(input)) return true;
+
+    const isValid = isValueFromDatalist(input);
+
+    if (!isValid) {
+      input.classList.add("is-invalid");
+      if (clearInvalid) {
+        input.value = "";
+      }
+    } else {
+      input.classList.remove("is-invalid");
+    }
+
+    return isValid;
+  }
+
+  function bindDatalistValidation(scope = document) {
+    const inputs = scope.querySelectorAll("input[list][data-restrict-to-list='1']");
+
+    inputs.forEach(input => {
+      input.addEventListener("input", () => {
+        input.classList.remove("is-invalid");
+      });
+
+      input.addEventListener("change", () => {
+        validateDatalistInput(input, { clearInvalid: false });
+      });
+
+      input.addEventListener("blur", () => {
+        validateDatalistInput(input, { clearInvalid: false });
+      });
+    });
+
+    scope.querySelectorAll("form").forEach(form => {
+      form.addEventListener("submit", e => {
+        const datalistInputs = form.querySelectorAll("input[list][data-restrict-to-list='1']");
+        let hasInvalid = false;
+
+        datalistInputs.forEach(input => {
+          const isValid = validateDatalistInput(input, { clearInvalid: false });
+          if (!isValid) {
+            hasInvalid = true;
+          }
+        });
+
+        if (hasInvalid) {
+          e.preventDefault();
+        }
+      });
+    });
+  }
+
   function bindRowButtons() {
     document.querySelectorAll("tr[data-id]").forEach(row => {
       const id = row.dataset.id;
@@ -959,9 +1035,9 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <div>
             <label class="form-label">Kategoria</label>
-            <select name="productCategory" id="editProductCategory" class="form-select">
-              <option value="">-- wybierz --</option>
-            </select>
+            <input type="text" name="productCategory" list="editProductCategory" class="form-control" value="${escapeHtml(category)}" data-restrict-to-list="1" required>
+            <datalist id="editProductCategory"></datalist>
+            <div class="invalid-feedback">Wybierz wartość z listy.</div>
           </div>
           <div>
             <label class="form-label">Ilość</label>
@@ -973,9 +1049,9 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <div>
             <label class="form-label">Lokalizacja</label>
-            <select name="productAdress" id="editProductLocation" class="form-select">
-              <option value="">-- wybierz --</option>
-            </select>
+            <input type="text" name="productAdress" list="editProductLocation" class="form-control" value="${escapeHtml(location)}" data-restrict-to-list="1" required>
+            <datalist id="editProductLocation"></datalist>
+            <div class="invalid-feedback">Wybierz wartość z listy.</div>
           </div>
           <div>
             <label class="form-label">Uwagi</label>
@@ -1149,6 +1225,8 @@ document.addEventListener("DOMContentLoaded", () => {
     formContainer.innerHTML = html;
     formModal.show();
 
+    bindDatalistValidation(formContainer);
+
     const filterForm = formContainer.querySelector("form[data-filter='1']");
     if (filterForm) {
       filterForm.addEventListener("submit", submitFilter);
@@ -1156,39 +1234,85 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const clearFilterBtn = formContainer.querySelector("[data-clear-filter]");
     if (clearFilterBtn) {
-      clearFilterBtn.addEventListener("click", () => {
+      clearFilterBtn.addEventListener("click", async () => {
         const sectionName = clearFilterBtn.dataset.clearFilter || currentSection;
+
         clearSectionFilter(sectionName);
+
+        if (sectionName === "slowniki_kategorie" || sectionName === "slowniki_lokalizacje") {
+          clearSectionFilter("slowniki");
+        }
+
         formModal.hide();
 
-        if (sectionName === "inwentaryzacja_pozycja") {
+        let requestTable = sectionName;
+        if (
+          sectionName === "slowniki_kategorie" ||
+          sectionName === "slowniki_lokalizacje" ||
+          sectionName === "slowniki"
+        ) {
+          requestTable = "slowniki";
+        }
+
+        const formData = new FormData();
+        formData.append("table", requestTable);
+        formData.append("page", "1");
+        formData.append("clearFilters", "1");
+        formData.append("isFilterRequest", "1");
+
+        if (requestTable === "inwentaryzacja_pozycja") {
           const inventoryId = getCurrentInventoryId();
           if (inventoryId) {
-            loadInventoryPositions(inventoryId, 1);
+            formData.append("inventoryId", inventoryId);
           }
-          return;
         }
 
-        if (sectionName === "slowniki_kategorie" || sectionName === "slowniki_lokalizacje" || sectionName === "slowniki") {
-          loadTable("slowniki", 1);
-          return;
-        }
+        try {
+          const res = await fetch("getTable.php", {
+            method: "POST",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+            body: formData
+          });
 
-        if (currentSection === sectionName) {
-          loadTable(sectionName, 1);
-        } else {
-          currentSection = sectionName;
-          localStorage.setItem(lastSectionStorageKey, currentSection);
-          localStorage.setItem(globalLastSectionStorageKey, currentSection);
-          loadSection(sectionName);
+          const html = await res.text();
+
+          if (handleAjaxSessionExpired(res, html)) return;
+
+          if (!res.ok) {
+            throw new Error(html || "Nie udało się wyczyścić filtrów.");
+          }
+
+          if (requestTable !== currentSection && requestTable !== "slowniki") {
+            currentSection = requestTable;
+            localStorage.setItem(lastSectionStorageKey, currentSection);
+            localStorage.setItem(globalLastSectionStorageKey, currentSection);
+          }
+
+          data.innerHTML = html;
+          afterTableRender();
+        } catch (err) {
+          data.innerHTML = `<div class="alert alert-danger">Błąd czyszczenia filtrów: ${escapeHtml(err.message || String(err))}</div>`;
         }
       });
-    }
-  }
+    }}
 
   async function submitFilter(e) {
     e.preventDefault();
     const form = e.target;
+
+    const datalistInputs = form.querySelectorAll("input[list][data-restrict-to-list='1']");
+    let hasInvalid = false;
+
+    datalistInputs.forEach(input => {
+      const isValid = validateDatalistInput(input, { clearInvalid: false });
+      if (!isValid) {
+        hasInvalid = true;
+      }
+    });
+
+    if (hasInvalid) {
+      return;
+    }
 
     const formData = new FormData(form);
     if (!formData.get("page")) {
@@ -1254,51 +1378,59 @@ document.addEventListener("DOMContentLoaded", () => {
           <form method="POST" action="getTable.php" data-filter="1" class="d-grid gap-2">
             <input type="hidden" name="table" value="historia_operacji">
             <input type="hidden" name="page" value="1">
+            <input type="hidden" name="isFilterRequest" value="1">
+
             <div>
               <label class="form-label">Login</label>
-              <select name="login" id="historyLoginSelect" class="form-select">
-                <option value="">-- wszystkie --</option>
-              </select>
+              <input type="text" name="login" list="historyLoginSelect" class="form-control" value="${escapeHtml(getFilterValue("historia_operacji", "login"))}" data-restrict-to-list="1">
+              <datalist id="historyLoginSelect"></datalist>
+              <div class="invalid-feedback">Wybierz wartość z listy.</div>
             </div>
+
             <div>
               <label class="form-label">Imię i nazwisko</label>
-              <select name="fullName" id="historyFullNameSelect" class="form-select">
-                <option value="">-- wszystkie --</option>
-              </select>
+              <input type="text" name="fullName" list="historyFullNameSelect" class="form-control" value="${escapeHtml(getFilterValue("historia_operacji", "fullName"))}" data-restrict-to-list="1">
+              <datalist id="historyFullNameSelect"></datalist>
+              <div class="invalid-feedback">Wybierz wartość z listy.</div>
             </div>
+
             <div>
               <label class="form-label">Typ obiektu</label>
-              <select name="objectType" class="form-select">
-                <option value="">-- wszystkie --</option>
+              <select id="historyObjectTypeList" name="objectType" class="form-select">
+                <option value="" ${getFilterValue("historia_operacji", "objectType", "") === "" ? "selected" : ""}>--wszystkie--</option>
                 <option value="produkt" ${getFilterValue("historia_operacji", "objectType") === "produkt" ? "selected" : ""}>Produkt</option>
                 <option value="kategorie" ${getFilterValue("historia_operacji", "objectType") === "kategorie" ? "selected" : ""}>Kategorie</option>
                 <option value="lokalizacje" ${getFilterValue("historia_operacji", "objectType") === "lokalizacje" ? "selected" : ""}>Lokalizacje</option>
               </select>
             </div>
+
             <div>
               <label class="form-label">Nazwa obiektu</label>
-              <select name="objectName" id="historyObjectNameSelect" class="form-select">
-                <option value="">-- wszystkie --</option>
-              </select>
+              <input type="text" name="objectName" list="historyObjectNameSelect" class="form-control" value="${escapeHtml(getFilterValue("historia_operacji", "objectName"))}" data-restrict-to-list="1">
+              <datalist id="historyObjectNameSelect"></datalist>
+              <div class="invalid-feedback">Wybierz wartość z listy.</div>
             </div>
+
             <div>
               <label class="form-label">Operacja</label>
-              <select name="operationName" class="form-select">
-                <option value="">-- wszystkie --</option>
-                <option value="dodanie" ${getFilterValue("historia_operacji", "operationName") === "dodanie" ? "selected" : ""}>Dodanie</option>
-                <option value="edycja" ${getFilterValue("historia_operacji", "operationName") === "edycja" ? "selected" : ""}>Edycja</option>
-                <option value="usunięcie" ${getFilterValue("historia_operacji", "operationName") === "usunięcie" ? "selected" : ""}>Usunięcie</option>
-                <option value="wydanie" ${getFilterValue("historia_operacji", "operationName") === "wydanie" ? "selected" : ""}>Wydanie</option>
-                <option value="inwentaryzacja" ${getFilterValue("historia_operacji", "operationName") === "inwentaryzacja" ? "selected" : ""}>Inwentaryzacja</option>
+              <select id="historyOperationNameList" name="operationName" class="form-select">
+                <option value="" ${getFilterValue("historia_operacji", "operationName", "") === "" ? "selected" : ""}>--wszystkie--</option>
+                <option value="dodanie" ${getFilterValue("historia_operacji", "operationName") === "dodanie" ? "selected" : ""}>Dodanie produktu</option>
+                <option value="edycja" ${getFilterValue("historia_operacji", "operationName") === "edycja" ? "selected" : ""}>Edycja produktu</option>
+                <option value="usunięcie" ${getFilterValue("historia_operacji", "operationName") === "usunięcie" ? "selected" : ""}>Usunięcie produktu</option>
+                <option value="wydanie" ${getFilterValue("historia_operacji", "operationName") === "wydanie" ? "selected" : ""}>Wydanie produktu</option>
+                <option value="inwentaryzacja" ${getFilterValue("historia_operacji", "operationName") === "inwentaryzacja" ? "selected" : ""}>Inwentaryzacja produktu</option>
                 <option value="dodanie_do_słownika" ${getFilterValue("historia_operacji", "operationName") === "dodanie_do_słownika" ? "selected" : ""}>Dodanie do słownika</option>
                 <option value="edycja_słownika" ${getFilterValue("historia_operacji", "operationName") === "edycja_słownika" ? "selected" : ""}>Edycja słownika</option>
-                <option value="usunięcie_z_słownika" ${getFilterValue("historia_operacji", "operationName") === "usunięcie_z_słownika" ? "selected" : ""}>Usunięcie z słownika</option>
+                <option value="usunięcie_z_słownika" ${getFilterValue("historia_operacji", "operationName") === "usunięcie_z_słownika" ? "selected" : ""}>Usunięcie ze słownika</option>
               </select>
             </div>
+
             <div>
               <label class="form-label">Data</label>
               <input type="date" name="operationDate" class="form-control" value="${escapeHtml(getFilterValue("historia_operacji", "operationDate"))}">
             </div>
+
             <div>
               <label class="form-label">Sortuj po kolumnie</label>
               <select name="sortColumn" class="form-select">
@@ -1312,6 +1444,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <option value="Data operacji" ${getFilterValue("historia_operacji", "sortColumn") === "Data operacji" ? "selected" : ""}>Data operacji</option>
               </select>
             </div>
+
             <div>
               <label class="form-label">Kierunek sortowania</label>
               <select name="sortOrder" class="form-select">
@@ -1319,6 +1452,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <option value="DESC" ${getFilterValue("historia_operacji", "sortOrder") === "DESC" ? "selected" : ""}>Malejąco</option>
               </select>
             </div>
+
             <div class="d-flex gap-2">
               <button type="submit" class="btn btn-warning mt-2">Filtruj</button>
               <button type="button" class="btn btn-secondary mt-2" data-clear-filter="historia_operacji">Wyczyść filtry</button>
@@ -1341,26 +1475,32 @@ document.addEventListener("DOMContentLoaded", () => {
           <form method="POST" action="getTable.php" data-filter="1" class="d-grid gap-2">
             <input type="hidden" name="table" value="wydania">
             <input type="hidden" name="page" value="1">
+            <input type="hidden" name="isFilterRequest" value="1">
+
             <div>
               <label class="form-label">Wydał</label>
-              <select name="issuedBy" id="issuesIssuedBySelect" class="form-select">
-                <option value="">-- wszystkie --</option>
-              </select>
+              <input type="text" name="issuedBy" list="issuesIssuedBySelect" class="form-control" value="${escapeHtml(getFilterValue("wydania", "issuedBy"))}" data-restrict-to-list="1">
+              <datalist id="issuesIssuedBySelect"></datalist>
+              <div class="invalid-feedback">Wybierz wartość z listy.</div>
             </div>
+
             <div>
               <label class="form-label">Nazwa produktu</label>
-              <select name="productName" id="issuesProductNameSelect" class="form-select">
-                <option value="">-- wszystkie --</option>
-              </select>
+              <input type="text" name="productName" list="issuesProductNameSelect" class="form-control" value="${escapeHtml(getFilterValue("wydania", "productName"))}" data-restrict-to-list="1">
+              <datalist id="issuesProductNameSelect"></datalist>
+              <div class="invalid-feedback">Wybierz wartość z listy.</div>
             </div>
+
             <div>
               <label class="form-label">Powód</label>
               <input type="text" name="reason" class="form-control" value="${escapeHtml(getFilterValue("wydania", "reason"))}">
             </div>
+
             <div>
               <label class="form-label">Data</label>
               <input type="date" name="issueDate" class="form-control" value="${escapeHtml(getFilterValue("wydania", "issueDate"))}">
             </div>
+
             <div class="row g-2">
               <div class="col">
                 <label class="form-label">Ilość od</label>
@@ -1371,9 +1511,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 <input type="number" min="0" name="quantityTo" class="form-control" value="${escapeHtml(getFilterValue("wydania", "quantityTo"))}">
               </div>
             </div>
+
             <div>
               <label class="form-label">Sortuj po kolumnie</label>
-              <select name="sortColumn" class="form-select">
+               <select name="sortColumn" class="form-select">
                 <option value="Id" ${getFilterValue("wydania", "sortColumn", "Id") === "Id" ? "selected" : ""}>Id</option>
                 <option value="Wydał" ${getFilterValue("wydania", "sortColumn") === "Wydał" ? "selected" : ""}>Wydał</option>
                 <option value="Data i godzina" ${getFilterValue("wydania", "sortColumn") === "Data i godzina" ? "selected" : ""}>Data i godzina</option>
@@ -1383,6 +1524,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <option value="Powód" ${getFilterValue("wydania", "sortColumn") === "Powód" ? "selected" : ""}>Powód</option>
               </select>
             </div>
+
             <div>
               <label class="form-label">Kierunek sortowania</label>
               <select name="sortOrder" class="form-select">
@@ -1390,6 +1532,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <option value="DESC" ${getFilterValue("wydania", "sortOrder") === "DESC" ? "selected" : ""}>Malejąco</option>
               </select>
             </div>
+
             <div class="d-flex gap-2">
               <button type="submit" class="btn btn-warning mt-2">Filtruj</button>
               <button type="button" class="btn btn-secondary mt-2" data-clear-filter="wydania">Wyczyść filtry</button>
@@ -1411,34 +1554,42 @@ document.addEventListener("DOMContentLoaded", () => {
           <form method="POST" action="getTable.php" data-filter="1" class="d-grid gap-2">
             <input type="hidden" name="table" value="inwentaryzacje">
             <input type="hidden" name="page" value="1">
+            <input type="hidden" name="isFilterRequest" value="1">
+
             <div>
               <label class="form-label">Zinwentaryzował</label>
-              <select name="inventoriedBy" id="inventoriesBySelect" class="form-select">
-                <option value="">-- wszystkie --</option>
-              </select>
+              <input type="text" name="inventoriedBy" list="inventoriesBySelect" class="form-control" value="${escapeHtml(getFilterValue("inwentaryzacje", "inventoriedBy"))}" data-restrict-to-list="1">
+              <datalist id="inventoriesBySelect"></datalist>
+              <div class="invalid-feedback">Wybierz wartość z listy.</div>
             </div>
+
             <div>
               <label class="form-label">Numer inwentaryzacji</label>
-              <select name="inventoryNumber" id="inventoriesNumberSelect" class="form-select">
-                <option value="">-- wszystkie --</option>
-              </select>
+              <input type="text" name="inventoryNumber" list="inventoriesNumberSelect" class="form-control" value="${escapeHtml(getFilterValue("inwentaryzacje", "inventoryNumber"))}" data-restrict-to-list="1">
+              <datalist id="inventoriesNumberSelect"></datalist>
+              <div class="invalid-feedback">Wybierz wartość z listy.</div>
             </div>
+
             <div>
               <label class="form-label">Data utworzenia</label>
               <input type="date" name="createdDate" class="form-control" value="${escapeHtml(getFilterValue("inwentaryzacje", "createdDate"))}">
             </div>
+
             <div>
               <label class="form-label">Data zatwierdzenia</label>
               <input type="date" name="approvedDate" class="form-control" value="${escapeHtml(getFilterValue("inwentaryzacje", "approvedDate"))}">
             </div>
+
             <div>
               <label class="form-label">Zatwierdzona</label>
-              <select name="approved" class="form-select">
-                <option value="">-- wszystkie --</option>
+              <select id="inventoriesApprovedList" name="approved" class="form-select">
+                <option value="" ${getFilterValue("inwentaryzacje", "approved", "") === "" ? "selected" : ""}>--wszystkie--</option>
                 <option value="1" ${getFilterValue("inwentaryzacje", "approved") === "1" ? "selected" : ""}>Tak</option>
                 <option value="0" ${getFilterValue("inwentaryzacje", "approved") === "0" ? "selected" : ""}>Nie</option>
               </select>
+              <div class="invalid-feedback">Wybierz wartość z listy.</div>
             </div>
+
             <div>
               <label class="form-label">Sortuj po kolumnie</label>
               <select name="sortColumn" class="form-select">
@@ -1451,6 +1602,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <option value="Liczba pozycji" ${getFilterValue("inwentaryzacje", "sortColumn") === "Liczba pozycji" ? "selected" : ""}>Liczba pozycji</option>
               </select>
             </div>
+
             <div>
               <label class="form-label">Kierunek sortowania</label>
               <select name="sortOrder" class="form-select">
@@ -1458,6 +1610,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <option value="DESC" ${getFilterValue("inwentaryzacje", "sortOrder") === "DESC" ? "selected" : ""}>Malejąco</option>
               </select>
             </div>
+
             <div class="d-flex gap-2">
               <button type="submit" class="btn btn-warning mt-2">Filtruj</button>
               <button type="button" class="btn btn-secondary mt-2" data-clear-filter="inwentaryzacje">Wyczyść filtry</button>
@@ -1482,12 +1635,15 @@ document.addEventListener("DOMContentLoaded", () => {
             <input type="hidden" name="table" value="inwentaryzacja_pozycja">
             <input type="hidden" name="inventoryId" value="${escapeHtml(inventoryId)}">
             <input type="hidden" name="page" value="1">
+            <input type="hidden" name="isFilterRequest" value="1">
+
             <div>
               <label class="form-label">Nazwa produktu</label>
-              <select name="productName" id="inventoryPositionsProductSelect" class="form-select">
-                <option value="">-- wszystkie --</option>
-              </select>
+              <input type="text" name="productName" list="inventoryPositionsProductSelect" class="form-control" value="${escapeHtml(getFilterValue("inwentaryzacja_pozycja", "productName"))}" data-restrict-to-list="1">
+              <datalist id="inventoryPositionsProductSelect"></datalist>
+              <div class="invalid-feedback">Wybierz wartość z listy.</div>
             </div>
+
             <div class="row g-2">
               <div class="col">
                 <label class="form-label">Stan od</label>
@@ -1498,6 +1654,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <input type="number" name="stateTo" class="form-control" value="${escapeHtml(getFilterValue("inwentaryzacja_pozycja", "stateTo"))}">
               </div>
             </div>
+
             <div class="row g-2">
               <div class="col">
                 <label class="form-label">Różnica od</label>
@@ -1508,6 +1665,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <input type="number" name="differenceTo" class="form-control" value="${escapeHtml(getFilterValue("inwentaryzacja_pozycja", "differenceTo"))}">
               </div>
             </div>
+
             <div>
               <label class="form-label">Sortuj po kolumnie</label>
               <select name="sortColumn" class="form-select">
@@ -1518,6 +1676,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <option value="Różnica" ${getFilterValue("inwentaryzacja_pozycja", "sortColumn") === "Różnica" ? "selected" : ""}>Różnica</option>
               </select>
             </div>
+
             <div>
               <label class="form-label">Kierunek sortowania</label>
               <select name="sortOrder" class="form-select">
@@ -1525,6 +1684,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <option value="DESC" ${getFilterValue("inwentaryzacja_pozycja", "sortOrder") === "DESC" ? "selected" : ""}>Malejąco</option>
               </select>
             </div>
+
             <div class="d-flex gap-2">
               <button type="submit" class="btn btn-warning mt-2">Filtruj</button>
               <button type="button" class="btn btn-secondary mt-2" data-clear-filter="inwentaryzacja_pozycja">Wyczyść filtry</button>
@@ -1546,22 +1706,26 @@ document.addEventListener("DOMContentLoaded", () => {
           <form method="POST" action="getTable.php" data-filter="1" class="d-grid gap-2">
             <input type="hidden" name="table" value="uzytkownicy">
             <input type="hidden" name="page" value="1">
+            <input type="hidden" name="isFilterRequest" value="1">
+
             <div>
               <label class="form-label">Login</label>
-              <select name="login" id="usersLoginSelect" class="form-select">
-                <option value="">-- wszystkie --</option>
-              </select>
+              <input type="text" name="login" list="usersLoginSelect" class="form-control" value="${escapeHtml(getFilterValue("uzytkownicy", "login"))}" data-restrict-to-list="1">
+              <datalist id="usersLoginSelect"></datalist>
+              <div class="invalid-feedback">Wybierz wartość z listy.</div>
             </div>
+
             <div>
               <label class="form-label">Imię i nazwisko</label>
-              <select name="fullName" id="usersFullNameSelect" class="form-select">
-                <option value="">-- wszystkie --</option>
-              </select>
+              <input type="text" name="fullName" list="usersFullNameSelect" class="form-control" value="${escapeHtml(getFilterValue("uzytkownicy", "fullName"))}" data-restrict-to-list="1">
+              <datalist id="usersFullNameSelect"></datalist>
+              <div class="invalid-feedback">Wybierz wartość z listy.</div>
             </div>
+
             <div>
               <label class="form-label">Status konta</label>
-              <select name="status" class="form-select">
-                <option value="">-- wszystkie --</option>
+              <select id="usersStatusList" name="status" class="form-select">
+                <option value="" ${getFilterValue("uzytkownicy", "status", "") === "" ? "selected" : ""}>--wszystkie--</option>
                 <option value="aktywne" ${getFilterValue("uzytkownicy", "status") === "aktywne" ? "selected" : ""}>Aktywne</option>
                 <option value="nieaktywne" ${getFilterValue("uzytkownicy", "status") === "nieaktywne" ? "selected" : ""}>Nieaktywne</option>
               </select>
@@ -1574,6 +1738,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <option value="user" ${getFilterValue("uzytkownicy", "role") === "user" ? "selected" : ""}>User</option>
               </select>
             </div>
+
             <div>
               <label class="form-label">Sortuj po kolumnie</label>
               <select name="sortColumn" class="form-select">
@@ -1584,6 +1749,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <option value="Rola" ${getFilterValue("uzytkownicy", "sortColumn") === "Rola" ? "selected" : ""}>Rola</option>
               </select>
             </div>
+
             <div>
               <label class="form-label">Kierunek sortowania</label>
               <select name="sortOrder" class="form-select">
@@ -1591,6 +1757,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <option value="DESC" ${getFilterValue("uzytkownicy", "sortOrder") === "DESC" ? "selected" : ""}>Malejąco</option>
               </select>
             </div>
+
             <div class="d-flex gap-2">
               <button type="submit" class="btn btn-warning mt-2">Filtruj</button>
               <button type="button" class="btn btn-secondary mt-2" data-clear-filter="uzytkownicy">Wyczyść filtry</button>
@@ -1613,34 +1780,41 @@ document.addEventListener("DOMContentLoaded", () => {
             <input type="hidden" name="table" value="magazyn">
             <input type="hidden" name="searchProduct" value="magazyn">
             <input type="hidden" name="page" value="1">
+            <input type="hidden" name="isFilterRequest" value="1">
+
             <div>
               <label class="form-label">Dodał</label>
-              <select name="addedBy" id="magazineAddedBySelect" class="form-select">
-                <option value="">-- wszystkie --</option>
-              </select>
+              <input type="text" name="addedBy" list="magazineAddedBySelect" class="form-control" value="${escapeHtml(getFilterValue("magazyn", "addedBy"))}" data-restrict-to-list="1">
+              <datalist id="magazineAddedBySelect"></datalist>
+              <div class="invalid-feedback">Wybierz wartość z listy.</div>
             </div>
+
             <div>
               <label class="form-label">Nazwa produktu</label>
-              <select name="productName" id="magazineProductNameSelect" class="form-select">
-                <option value="">-- wszystkie --</option>
-              </select>
+              <input type="text" name="productName" list="magazineProductNameSelect" class="form-control" value="${escapeHtml(getFilterValue("magazyn", "productName"))}" data-restrict-to-list="1">
+              <datalist id="magazineProductNameSelect"></datalist>
+              <div class="invalid-feedback">Wybierz wartość z listy.</div>
             </div>
+
             <div>
               <label class="form-label">Kategoria</label>
-              <select name="productCategory" id="magazineCategorySelect" class="form-select">
-                <option value="">-- wszystkie --</option>
-              </select>
+              <input type="text" name="productCategory" list="magazineCategorySelect" class="form-control" value="${escapeHtml(getFilterValue("magazyn", "productCategory"))}" data-restrict-to-list="1">
+              <datalist id="magazineCategorySelect"></datalist>
+              <div class="invalid-feedback">Wybierz wartość z listy.</div>
             </div>
+
             <div>
               <label class="form-label">Lokalizacja</label>
-              <select name="productAdress" id="magazineLocationSelect" class="form-select">
-                <option value="">-- wszystkie --</option>
-              </select>
+              <input type="text" name="productAdress" list="magazineLocationSelect" class="form-control" value="${escapeHtml(getFilterValue("magazyn", "productAdress"))}" data-restrict-to-list="1">
+              <datalist id="magazineLocationSelect"></datalist>
+              <div class="invalid-feedback">Wybierz wartość z listy.</div>
             </div>
+
             <div>
               <label class="form-label">Uwagi</label>
               <input type="text" name="productComments" class="form-control" value="${escapeHtml(getFilterValue("magazyn", "productComments"))}">
             </div>
+
             <div class="row g-2">
               <div class="col">
                 <label class="form-label">Ilość od</label>
@@ -1651,6 +1825,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <input type="number" min="0" name="quantityTo" class="form-control" value="${escapeHtml(getFilterValue("magazyn", "quantityTo"))}">
               </div>
             </div>
+
             <div>
               <label class="form-label">Sortuj po kolumnie</label>
               <select name="sortColumn" class="form-select">
@@ -1664,6 +1839,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <option value="Uwagi" ${getFilterValue("magazyn", "sortColumn") === "Uwagi" ? "selected" : ""}>Uwagi</option>
               </select>
             </div>
+
             <div>
               <label class="form-label">Kierunek sortowania</label>
               <select name="sortOrder" class="form-select">
@@ -1671,6 +1847,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <option value="DESC" ${getFilterValue("magazyn", "sortOrder") === "DESC" ? "selected" : ""}>Malejąco</option>
               </select>
             </div>
+
             <div class="d-flex gap-2">
               <button type="submit" class="btn btn-warning mt-2">Filtruj</button>
               <button type="button" class="btn btn-secondary mt-2" data-clear-filter="magazyn">Wyczyść filtry</button>
@@ -1695,6 +1872,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <input type="hidden" name="table" value="slowniki">
             <input type="hidden" name="dictionaryFilterType" value="kategorie">
             <input type="hidden" name="page" value="1">
+            <input type="hidden" name="isFilterRequest" value="1">
 
             <div>
               <label class="form-label">Id</label>
@@ -1728,6 +1906,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <input type="hidden" name="table" value="slowniki">
             <input type="hidden" name="dictionaryFilterType" value="lokalizacje">
             <input type="hidden" name="page" value="1">
+            <input type="hidden" name="isFilterRequest" value="1">
 
             <div>
               <label class="form-label">Id</label>
@@ -1765,9 +1944,9 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <div>
               <label class="form-label">Kategoria</label>
-              <select name="productCategory" id="selectProductCategory" class="form-select">
-                <option value="">-- wybierz --</option>
-              </select>
+              <input type="text" name="productCategory" list="selectProductCategory" class="form-control" data-restrict-to-list="1" required>
+              <datalist id="selectProductCategory"></datalist>
+              <div class="invalid-feedback">Wybierz wartość z listy.</div>
             </div>
             <div>
               <label class="form-label">Ilość</label>
@@ -1779,9 +1958,9 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <div>
               <label class="form-label">Lokalizacja</label>
-              <select name="productAdress" id="selectProductLocation" class="form-select">
-                <option value="">-- wybierz --</option>
-              </select>
+              <input type="text" name="productAdress" list="selectProductLocation" class="form-control" data-restrict-to-list="1" required>
+              <datalist id="selectProductLocation"></datalist>
+              <div class="invalid-feedback">Wybierz wartość z listy.</div>
             </div>
             <div>
               <label class="form-label">Uwagi</label>
@@ -1888,8 +2067,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function fillSelect(selectId, dictionaryType, selectedValue = "", includeEmpty = true) {
-    const select = document.getElementById(selectId);
-    if (!select) return;
+    const datalist = document.getElementById(selectId);
+    if (!datalist) return;
 
     try {
       const res = await fetch(`getDictionaries.php?type=${encodeURIComponent(dictionaryType)}`, {
@@ -1905,23 +2084,28 @@ document.addEventListener("DOMContentLoaded", () => {
       let html = "";
 
       if (includeEmpty) {
-        html += `<option value="">-- wybierz --</option>`;
+        html += `<option value=""></option>`;
       }
 
       if (Array.isArray(items)) {
         html += items
           .map(item => {
-            const value = String(item ?? "");
-            const selected = value === String(selectedValue ?? "") ? "selected" : "";
-            return `<option value="${escapeHtml(value)}" ${selected}>${escapeHtml(value)}</option>`;
+            const value = String(item ?? "").trim();
+            if (!value) return "";
+            return `<option value="${escapeHtml(value)}"></option>`;
           })
           .join("");
       }
 
-      select.innerHTML = html;
+      datalist.innerHTML = html;
+
+      const relatedInput = document.querySelector(`input[list="${selectId}"]`);
+      if (relatedInput && selectedValue !== undefined && selectedValue !== null && selectedValue !== "") {
+        relatedInput.value = String(selectedValue);
+      }
     } catch (err) {
       console.error("Błąd ładowania słownika:", err);
-      select.innerHTML = includeEmpty ? `<option value="">-- wybierz --</option>` : "";
+      datalist.innerHTML = includeEmpty ? `<option value=""></option>` : "";
     }
   }
 

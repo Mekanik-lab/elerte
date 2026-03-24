@@ -1332,14 +1332,13 @@ data-user-login="<?= escapeHtml($_SESSION['login'] ?? '') ?>">
         <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="magazyn">Magazyn</button>
         <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="wydania">Wydania</button>
         <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="inwentaryzacje">Inwentaryzacje</button>
-        <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="ustawienia_konta">Ustawienia konta</button>
 
         <?php if ($_SESSION["rola"] === "admin"): ?>
           <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="uzytkownicy">Użytkownicy</button>
           <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="historia_operacji">Historia operacji</button>
           <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="slowniki">Słowniki</button>
         <?php endif; ?>
-
+                <button class="btn btn-outline-light text-start fw-semibold tab-btn" data-section="ustawienia_konta">Ustawienia konta</button>
         <a href="logout.php" class="btn btn-dark text-start fw-semibold mt-3">Wyloguj</a>
       </div>
     </aside>

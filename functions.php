@@ -227,6 +227,11 @@ if (!function_exists('canChangeTargetRfid')) {
         }
 
         $targetLogin = (string) ($targetUser["login"] ?? "");
+        $targetStatus = (string) ($targetUser["status_konta"] ?? "");
+        
+        if ($targetStatus !== "aktywne") {
+            return false;
+        }
 
         if ($targetLogin === "AdminSystemu") {
             return false;
